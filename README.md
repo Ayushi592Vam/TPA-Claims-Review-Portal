@@ -3,6 +3,7 @@
 A professional, Streamlit web application for Third-Party Administrators (TPAs) and insurance teams to **upload, review, edit, and export** loss run data from Excel or CSV files — with full Excel cell traceability and structured JSON output.
 
 ---
+https://tpa-claims-review-app.streamlit.app/
 
 ## 📋 Table of Contents
 
@@ -151,6 +152,15 @@ streamlit run app.py
 The app will open in your browser at `http://localhost:8501`.
 
 ---
+## 🚀 Live Demo
+
+Access the deployed application here:
+
+👉 **[https://your-app-name.streamlit.app](https://tpa-claims-review-app.streamlit.app/)**
+
+> No installation required — just open the link and upload your loss run file.
+
+
 
 ## 📖 Usage Guide
 
