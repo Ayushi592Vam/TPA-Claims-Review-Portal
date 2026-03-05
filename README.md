@@ -1,9 +1,8 @@
 # 🛡️ TPA Claims Review Portal
 
-A professional, Streamlit web application for Third-Party Administrators (TPAs) and insurance teams to **upload, review, edit, and export** loss run data from Excel or CSV files — with full Excel cell traceability and structured JSON output.
+A professional, Streamlit web application for Third-Party Administrators (TPAs) and insurance teams to **upload, review, edit, and export** loss run data from Excel or CSV files - with full Excel cell traceability and structured JSON output.
 
 ---
-https://tpa-claims-review-app.streamlit.app/
 
 ## 📋 Table of Contents
 
@@ -23,7 +22,7 @@ https://tpa-claims-review-app.streamlit.app/
 
 ## Overview
 
-The TPA Claims Review Portal streamlines the loss run review workflow for insurance professionals. It reads multi-sheet Excel workbooks (or CSVs), automatically classifies sheet types (Loss Run, Summary, Commercial), extracts claim records with their exact Excel cell coordinates, and lets reviewers audit, edit, and export clean structured data — all without touching the original file.
+The TPA Claims Review Portal streamlines the loss run review workflow for insurance professionals. It reads multi-sheet Excel workbooks (or CSVs), automatically classifies sheet types (Loss Run, Summary, Commercial), extracts claim records with their exact Excel cell coordinates, and lets reviewers audit, edit, and export clean structured data - all without touching the original file.
 
 ---
 
@@ -38,7 +37,7 @@ The TPA Claims Review Portal streamlines the loss run review workflow for insura
 ### 🧠 Intelligent Extraction
 - Automatically locates the header row (no manual column mapping needed)
 - Extracts every data row with its **exact Excel row and column coordinates**
-- Detects and parses **merged cell regions** — Title rows, header bands, and data spans
+- Detects and parses **merged cell regions** - Title rows, header bands, and data spans
 - Extracts **totals/grand total rows** separately and aggregates financial columns
 - Honours the cell's **actual Excel number format** for dates (e.g. `MM-DD-YYYY`, `DD/MM/YYYY`) — displays exactly as it appears in Excel
 - Normalises Unicode punctuation (smart quotes, en/em dashes) to plain ASCII
@@ -60,15 +59,15 @@ The TPA Claims Review Portal streamlines the loss run review workflow for insura
 
 ### ✏️ Editing
 - Click the **✏ pencil icon** to enter edit mode for any field
-- Press **Enter** to save — works even if the value hasn't changed
+- Press **Enter** to save - works even if the value hasn't changed
 - All edits tracked with `edited: true/false` flag in the export
 - Original value always preserved alongside the modified value
 
 ### 📤 Export
 - **Standard JSON** export with a sequential structure mirroring the Excel layout:
-  1. `titleRows` — merged title/header regions (in top-to-bottom order)
-  2. `records` — claim records keyed by Claim ID
-  3. `totals` — aggregated financial totals from the sheet's totals row
+  1. `titleRows` - merged title/header regions (in top-to-bottom order)
+  2. `records` - claim records keyed by Claim ID
+  3. `totals` - aggregated financial totals from the sheet's totals row
 - Exports only checked fields
 - All exported strings sanitised (Unicode normalised)
 - Auto-saved to local `feature_store/claims_json/` directory with timestamp
@@ -156,9 +155,9 @@ The app will open in your browser at `http://localhost:8501`.
 
 Access the deployed application here:
 
-👉 **[https://your-app-name.streamlit.app](https://tpa-claims-review-app.streamlit.app/)**
+👉 **(https://tpa-claims-review-app.streamlit.app/)**
 
-> No installation required — just open the link and upload your loss run file.
+> No installation required - just open the link and upload your loss run file.
 
 
 
