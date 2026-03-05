@@ -1,0 +1,1058 @@
+{
+  "exportDate": "2026-03-05T12:45:35.988190",
+  "sheetMeta": {
+    "sheet_name": "CGL Loss Run",
+    "record_count": 10
+  },
+  "titleRows": [
+    {
+      "type": "TITLE",
+      "value": "COMMERCIAL GENERAL LIABILITY - LOSS RUN REPORT",
+      "excel_row": 1,
+      "excel_col": 1,
+      "span_cols": 11,
+      "span_rows": 1
+    },
+    {
+      "type": "TITLE",
+      "value": "Insured: Apex Construction LLC  |  Policy #: CGL-2021-00847  |  Period: 01/01/2021 - 12/31/2023  |  Carrier: Pinnacle Insurance Co.",
+      "excel_row": 2,
+      "excel_col": 1,
+      "span_cols": 11,
+      "span_rows": 1
+    }
+  ],
+  "records": {
+    "CGL-001": {
+      "Claim_id": {
+        "value": "CGL-001",
+        "original": "CGL-001",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 1,
+        "record_index": 0
+      },
+      "Date of Loss": {
+        "value": "03/15/2021",
+        "original": "03/15/2021",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 2,
+        "record_index": 0
+      },
+      "Date Reported": {
+        "value": "03/20/2021",
+        "original": "03/20/2021",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 3,
+        "record_index": 0
+      },
+      "Claimant Name": {
+        "value": "John Martinez",
+        "original": "John Martinez",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 4,
+        "record_index": 0
+      },
+      "Description of Loss": {
+        "value": "Slip & fall - wet floor at job site",
+        "original": "Slip & fall - wet floor at job site",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 5,
+        "record_index": 0
+      },
+      "Indemnity Paid": {
+        "value": "12500.00",
+        "original": "12500.00",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 6,
+        "record_index": 0
+      },
+      "Medical Paid": {
+        "value": "8200.00",
+        "original": "8200.00",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 7,
+        "record_index": 0
+      },
+      "Expense Paid": {
+        "value": "3100.00",
+        "original": "3100.00",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 8,
+        "record_index": 0
+      },
+      "Total Paid": {
+        "value": "23800.00",
+        "original": "23800.00",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 9,
+        "record_index": 0
+      },
+      "Reserve": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 10,
+        "record_index": 0
+      },
+      "Total Incurred": {
+        "value": "23800.00",
+        "original": "23800.00",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 11,
+        "record_index": 0
+      },
+      "Status": {
+        "value": "CLOSED",
+        "original": "CLOSED",
+        "edited": false,
+        "excel_row": 4,
+        "excel_col": 12,
+        "record_index": 0
+      }
+    },
+    "CGL-002": {
+      "Claim_id": {
+        "value": "CGL-002",
+        "original": "CGL-002",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 1,
+        "record_index": 1
+      },
+      "Date of Loss": {
+        "value": "07/08/2021",
+        "original": "07/08/2021",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 2,
+        "record_index": 1
+      },
+      "Date Reported": {
+        "value": "07/10/2021",
+        "original": "07/10/2021",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 3,
+        "record_index": 1
+      },
+      "Claimant Name": {
+        "value": "Sarah Thompson",
+        "original": "Sarah Thompson",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 4,
+        "record_index": 1
+      },
+      "Description of Loss": {
+        "value": "Property damage - contractor equipment",
+        "original": "Property damage - contractor equipment",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 5,
+        "record_index": 1
+      },
+      "Indemnity Paid": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 6,
+        "record_index": 1
+      },
+      "Medical Paid": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 7,
+        "record_index": 1
+      },
+      "Expense Paid": {
+        "value": "1500.00",
+        "original": "1500.00",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 8,
+        "record_index": 1
+      },
+      "Total Paid": {
+        "value": "1500.00",
+        "original": "1500.00",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 9,
+        "record_index": 1
+      },
+      "Reserve": {
+        "value": "22000.00",
+        "original": "22000.00",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 10,
+        "record_index": 1
+      },
+      "Total Incurred": {
+        "value": "23500.00",
+        "original": "23500.00",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 11,
+        "record_index": 1
+      },
+      "Status": {
+        "value": "OPEN",
+        "original": "OPEN",
+        "edited": false,
+        "excel_row": 5,
+        "excel_col": 12,
+        "record_index": 1
+      }
+    },
+    "CGL-003": {
+      "Claim_id": {
+        "value": "CGL-003",
+        "original": "CGL-003",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 1,
+        "record_index": 2
+      },
+      "Date of Loss": {
+        "value": "11/22/2021",
+        "original": "11/22/2021",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 2,
+        "record_index": 2
+      },
+      "Date Reported": {
+        "value": "12/01/2021",
+        "original": "12/01/2021",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 3,
+        "record_index": 2
+      },
+      "Claimant Name": {
+        "value": "Robert Chen",
+        "original": "Robert Chen",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 4,
+        "record_index": 2
+      },
+      "Description of Loss": {
+        "value": "Bodily injury - falling debris",
+        "original": "Bodily injury - falling debris",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 5,
+        "record_index": 2
+      },
+      "Indemnity Paid": {
+        "value": "45000.00",
+        "original": "45000.00",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 6,
+        "record_index": 2
+      },
+      "Medical Paid": {
+        "value": "18750.00",
+        "original": "18750.00",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 7,
+        "record_index": 2
+      },
+      "Expense Paid": {
+        "value": "9200.00",
+        "original": "9200.00",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 8,
+        "record_index": 2
+      },
+      "Total Paid": {
+        "value": "72950.00",
+        "original": "72950.00",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 9,
+        "record_index": 2
+      },
+      "Reserve": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 10,
+        "record_index": 2
+      },
+      "Total Incurred": {
+        "value": "72950.00",
+        "original": "72950.00",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 11,
+        "record_index": 2
+      },
+      "Status": {
+        "value": "CLOSED",
+        "original": "CLOSED",
+        "edited": false,
+        "excel_row": 6,
+        "excel_col": 12,
+        "record_index": 2
+      }
+    },
+    "CGL-004": {
+      "Claim_id": {
+        "value": "CGL-004",
+        "original": "CGL-004",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 1,
+        "record_index": 3
+      },
+      "Date of Loss": {
+        "value": "02/14/2022",
+        "original": "02/14/2022",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 2,
+        "record_index": 3
+      },
+      "Date Reported": {
+        "value": "02/18/2022",
+        "original": "02/18/2022",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 3,
+        "record_index": 3
+      },
+      "Claimant Name": {
+        "value": "Linda Foster",
+        "original": "Linda Foster",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 4,
+        "record_index": 3
+      },
+      "Description of Loss": {
+        "value": "Premises liability - parking lot",
+        "original": "Premises liability - parking lot",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 5,
+        "record_index": 3
+      },
+      "Indemnity Paid": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 6,
+        "record_index": 3
+      },
+      "Medical Paid": {
+        "value": "4300.00",
+        "original": "4300.00",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 7,
+        "record_index": 3
+      },
+      "Expense Paid": {
+        "value": "2100.00",
+        "original": "2100.00",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 8,
+        "record_index": 3
+      },
+      "Total Paid": {
+        "value": "6400.00",
+        "original": "6400.00",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 9,
+        "record_index": 3
+      },
+      "Reserve": {
+        "value": "35000.00",
+        "original": "35000.00",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 10,
+        "record_index": 3
+      },
+      "Total Incurred": {
+        "value": "41400.00",
+        "original": "41400.00",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 11,
+        "record_index": 3
+      },
+      "Status": {
+        "value": "OPEN",
+        "original": "OPEN",
+        "edited": false,
+        "excel_row": 7,
+        "excel_col": 12,
+        "record_index": 3
+      }
+    },
+    "CGL-005": {
+      "Claim_id": {
+        "value": "CGL-005",
+        "original": "CGL-005",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 1,
+        "record_index": 4
+      },
+      "Date of Loss": {
+        "value": "06/30/2022",
+        "original": "06/30/2022",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 2,
+        "record_index": 4
+      },
+      "Date Reported": {
+        "value": "07/05/2022",
+        "original": "07/05/2022",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 3,
+        "record_index": 4
+      },
+      "Claimant Name": {
+        "value": "Michael Wong",
+        "original": "Michael Wong",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 4,
+        "record_index": 4
+      },
+      "Description of Loss": {
+        "value": "Products liability - defective material",
+        "original": "Products liability - defective material",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 5,
+        "record_index": 4
+      },
+      "Indemnity Paid": {
+        "value": "28500.00",
+        "original": "28500.00",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 6,
+        "record_index": 4
+      },
+      "Medical Paid": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 7,
+        "record_index": 4
+      },
+      "Expense Paid": {
+        "value": "6750.00",
+        "original": "6750.00",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 8,
+        "record_index": 4
+      },
+      "Total Paid": {
+        "value": "35250.00",
+        "original": "35250.00",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 9,
+        "record_index": 4
+      },
+      "Reserve": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 10,
+        "record_index": 4
+      },
+      "Total Incurred": {
+        "value": "35250.00",
+        "original": "35250.00",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 11,
+        "record_index": 4
+      },
+      "Status": {
+        "value": "CLOSED",
+        "original": "CLOSED",
+        "edited": false,
+        "excel_row": 8,
+        "excel_col": 12,
+        "record_index": 4
+      }
+    },
+    "CGL-006": {
+      "Claim_id": {
+        "value": "CGL-006",
+        "original": "CGL-006",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 1,
+        "record_index": 5
+      },
+      "Date of Loss": {
+        "value": "09/11/2022",
+        "original": "09/11/2022",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 2,
+        "record_index": 5
+      },
+      "Date Reported": {
+        "value": "09/14/2022",
+        "original": "09/14/2022",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 3,
+        "record_index": 5
+      },
+      "Claimant Name": {
+        "value": "Patricia Adams",
+        "original": "Patricia Adams",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 4,
+        "record_index": 5
+      },
+      "Description of Loss": {
+        "value": "Bodily injury - scaffolding collapse",
+        "original": "Bodily injury - scaffolding collapse",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 5,
+        "record_index": 5
+      },
+      "Indemnity Paid": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 6,
+        "record_index": 5
+      },
+      "Medical Paid": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 7,
+        "record_index": 5
+      },
+      "Expense Paid": {
+        "value": "4200.00",
+        "original": "4200.00",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 8,
+        "record_index": 5
+      },
+      "Total Paid": {
+        "value": "4200.00",
+        "original": "4200.00",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 9,
+        "record_index": 5
+      },
+      "Reserve": {
+        "value": "125000.00",
+        "original": "125000.00",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 10,
+        "record_index": 5
+      },
+      "Total Incurred": {
+        "value": "129200.00",
+        "original": "129200.00",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 11,
+        "record_index": 5
+      },
+      "Status": {
+        "value": "OPEN",
+        "original": "OPEN",
+        "edited": false,
+        "excel_row": 9,
+        "excel_col": 12,
+        "record_index": 5
+      }
+    },
+    "CGL-007": {
+      "Claim_id": {
+        "value": "CGL-007",
+        "original": "CGL-007",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 1,
+        "record_index": 6
+      },
+      "Date of Loss": {
+        "value": "01/20/2023",
+        "original": "01/20/2023",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 2,
+        "record_index": 6
+      },
+      "Date Reported": {
+        "value": "01/25/2023",
+        "original": "01/25/2023",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 3,
+        "record_index": 6
+      },
+      "Claimant Name": {
+        "value": "David Lee",
+        "original": "David Lee",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 4,
+        "record_index": 6
+      },
+      "Description of Loss": {
+        "value": "Property damage - water intrusion",
+        "original": "Property damage - water intrusion",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 5,
+        "record_index": 6
+      },
+      "Indemnity Paid": {
+        "value": "7800.00",
+        "original": "7800.00",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 6,
+        "record_index": 6
+      },
+      "Medical Paid": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 7,
+        "record_index": 6
+      },
+      "Expense Paid": {
+        "value": "1900.00",
+        "original": "1900.00",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 8,
+        "record_index": 6
+      },
+      "Total Paid": {
+        "value": "9700.00",
+        "original": "9700.00",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 9,
+        "record_index": 6
+      },
+      "Reserve": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 10,
+        "record_index": 6
+      },
+      "Total Incurred": {
+        "value": "9700.00",
+        "original": "9700.00",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 11,
+        "record_index": 6
+      },
+      "Status": {
+        "value": "CLOSED",
+        "original": "CLOSED",
+        "edited": false,
+        "excel_row": 10,
+        "excel_col": 12,
+        "record_index": 6
+      }
+    },
+    "CGL-008": {
+      "Claim_id": {
+        "value": "CGL-008",
+        "original": "CGL-008",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 1,
+        "record_index": 7
+      },
+      "Date of Loss": {
+        "value": "05/03/2023",
+        "original": "05/03/2023",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 2,
+        "record_index": 7
+      },
+      "Date Reported": {
+        "value": "05/07/2023",
+        "original": "05/07/2023",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 3,
+        "record_index": 7
+      },
+      "Claimant Name": {
+        "value": "Angela Rivera",
+        "original": "Angela Rivera",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 4,
+        "record_index": 7
+      },
+      "Description of Loss": {
+        "value": "Slip & fall - construction entrance",
+        "original": "Slip & fall - construction entrance",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 5,
+        "record_index": 7
+      },
+      "Indemnity Paid": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 6,
+        "record_index": 7
+      },
+      "Medical Paid": {
+        "value": "2100.00",
+        "original": "2100.00",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 7,
+        "record_index": 7
+      },
+      "Expense Paid": {
+        "value": "800.00",
+        "original": "800.00",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 8,
+        "record_index": 7
+      },
+      "Total Paid": {
+        "value": "2900.00",
+        "original": "2900.00",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 9,
+        "record_index": 7
+      },
+      "Reserve": {
+        "value": "18000.00",
+        "original": "18000.00",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 10,
+        "record_index": 7
+      },
+      "Total Incurred": {
+        "value": "20900.00",
+        "original": "20900.00",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 11,
+        "record_index": 7
+      },
+      "Status": {
+        "value": "OPEN",
+        "original": "OPEN",
+        "edited": false,
+        "excel_row": 11,
+        "excel_col": 12,
+        "record_index": 7
+      }
+    },
+    "CGL-009": {
+      "Claim_id": {
+        "value": "CGL-009",
+        "original": "CGL-009",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 1,
+        "record_index": 8
+      },
+      "Date of Loss": {
+        "value": "08/17/2023",
+        "original": "08/17/2023",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 2,
+        "record_index": 8
+      },
+      "Date Reported": {
+        "value": "08/20/2023",
+        "original": "08/20/2023",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 3,
+        "record_index": 8
+      },
+      "Claimant Name": {
+        "value": "James Patel",
+        "original": "James Patel",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 4,
+        "record_index": 8
+      },
+      "Description of Loss": {
+        "value": "Bodily injury - vehicle contact",
+        "original": "Bodily injury - vehicle contact",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 5,
+        "record_index": 8
+      },
+      "Indemnity Paid": {
+        "value": "15200.00",
+        "original": "15200.00",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 6,
+        "record_index": 8
+      },
+      "Medical Paid": {
+        "value": "9400.00",
+        "original": "9400.00",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 7,
+        "record_index": 8
+      },
+      "Expense Paid": {
+        "value": "3600.00",
+        "original": "3600.00",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 8,
+        "record_index": 8
+      },
+      "Total Paid": {
+        "value": "28200.00",
+        "original": "28200.00",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 9,
+        "record_index": 8
+      },
+      "Reserve": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 10,
+        "record_index": 8
+      },
+      "Total Incurred": {
+        "value": "28200.00",
+        "original": "28200.00",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 11,
+        "record_index": 8
+      },
+      "Status": {
+        "value": "CLOSED",
+        "original": "CLOSED",
+        "edited": false,
+        "excel_row": 12,
+        "excel_col": 12,
+        "record_index": 8
+      }
+    },
+    "CGL-010": {
+      "Claim_id": {
+        "value": "CGL-010",
+        "original": "CGL-010",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 1,
+        "record_index": 9
+      },
+      "Date of Loss": {
+        "value": "11/05/2023",
+        "original": "11/05/2023",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 2,
+        "record_index": 9
+      },
+      "Date Reported": {
+        "value": "11/09/2023",
+        "original": "11/09/2023",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 3,
+        "record_index": 9
+      },
+      "Claimant Name": {
+        "value": "Nancy Scott",
+        "original": "Nancy Scott",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 4,
+        "record_index": 9
+      },
+      "Description of Loss": {
+        "value": "Property damage - third party",
+        "original": "Property damage - third party",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 5,
+        "record_index": 9
+      },
+      "Indemnity Paid": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 6,
+        "record_index": 9
+      },
+      "Medical Paid": {
+        "value": "0.00",
+        "original": "0.00",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 7,
+        "record_index": 9
+      },
+      "Expense Paid": {
+        "value": "1200.00",
+        "original": "1200.00",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 8,
+        "record_index": 9
+      },
+      "Total Paid": {
+        "value": "1200.00",
+        "original": "1200.00",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 9,
+        "record_index": 9
+      },
+      "Reserve": {
+        "value": "9500.00",
+        "original": "9500.00",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 10,
+        "record_index": 9
+      },
+      "Total Incurred": {
+        "value": "10700.00",
+        "original": "10700.00",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 11,
+        "record_index": 9
+      },
+      "Status": {
+        "value": "OPEN",
+        "original": "OPEN",
+        "edited": false,
+        "excel_row": 13,
+        "excel_col": 12,
+        "record_index": 9
+      }
+    }
+  },
+  "totals": {
+    "excel_row": 14,
+    "rows": [
+      {
+        "Description of Loss": {
+          "value": "TOTALS",
+          "excel_row": 14,
+          "excel_col": 5
+        },
+        "Indemnity Paid": {
+          "value": "109000.00",
+          "excel_row": 14,
+          "excel_col": 6
+        },
+        "Medical Paid": {
+          "value": "42750.00",
+          "excel_row": 14,
+          "excel_col": 7
+        },
+        "Expense Paid": {
+          "value": "34350.00",
+          "excel_row": 14,
+          "excel_col": 8
+        },
+        "Total Paid": {
+          "value": "186100.00",
+          "excel_row": 14,
+          "excel_col": 9
+        },
+        "Reserve": {
+          "value": "209500.00",
+          "excel_row": 14,
+          "excel_col": 10
+        },
+        "Total Incurred": {
+          "value": "395600.00",
+          "excel_row": 14,
+          "excel_col": 11
+        }
+      }
+    ],
+    "aggregated": {
+      "Indemnity Paid": 109000.0,
+      "Medical Paid": 42750.0,
+      "Expense Paid": 34350.0,
+      "Total Paid": 186100.0,
+      "Reserve": 209500.0,
+      "Total Incurred": 395600.0
+    }
+  },
+  "recordCount": 10
+}
