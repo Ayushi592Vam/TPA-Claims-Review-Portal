@@ -1,0 +1,511 @@
+{
+  "schema": "Guidewire.ClaimCenter.REST.v1",
+  "exportDate": "2026-03-06T14:30:54.124686",
+  "source": "TPA_Claims_Review_Portal",
+  "sheetName": "CGL Loss Run",
+  "recordCount": 10,
+  "data": {
+    "claims": [
+      {
+        "_type": "cc.Claim",
+        "_confidence": 94,
+        "claimNumber": {
+          "value": "CGL-001",
+          "confidence": 89
+        },
+        "claimantName": {
+          "value": "John Martinez",
+          "confidence": 92
+        },
+        "lossDate": {
+          "value": "03/15/2021",
+          "confidence": 100
+        },
+        "status": {
+          "value": "CLOSED",
+          "confidence": 100
+        },
+        "lineOfBusinessCode": {
+          "value": "23800.00",
+          "confidence": 82
+        },
+        "policyNumber": {
+          "value": "23800.00",
+          "confidence": 80
+        },
+        "financials": {
+          "totalIncurredAmount": {
+            "amount": "23800.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "totalPaidAmount": {
+            "amount": "23800.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "reserveAmount": {
+            "amount": "0.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "medicalPaidAmount": {
+            "amount": "8200.00",
+            "currency": "USD",
+            "confidence": 100
+          }
+        }
+      },
+      {
+        "_type": "cc.Claim",
+        "_confidence": 94,
+        "claimNumber": {
+          "value": "CGL-002",
+          "confidence": 89
+        },
+        "claimantName": {
+          "value": "Sarah Thompson",
+          "confidence": 92
+        },
+        "lossDate": {
+          "value": "07/08/2021",
+          "confidence": 100
+        },
+        "status": {
+          "value": "OPEN",
+          "confidence": 100
+        },
+        "lineOfBusinessCode": {
+          "value": "23500.00",
+          "confidence": 82
+        },
+        "policyNumber": {
+          "value": "1500.00",
+          "confidence": 80
+        },
+        "financials": {
+          "totalIncurredAmount": {
+            "amount": "23500.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "totalPaidAmount": {
+            "amount": "1500.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "reserveAmount": {
+            "amount": "22000.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "medicalPaidAmount": {
+            "amount": "0.00",
+            "currency": "USD",
+            "confidence": 100
+          }
+        }
+      },
+      {
+        "_type": "cc.Claim",
+        "_confidence": 94,
+        "claimNumber": {
+          "value": "CGL-003",
+          "confidence": 89
+        },
+        "claimantName": {
+          "value": "Robert Chen",
+          "confidence": 92
+        },
+        "lossDate": {
+          "value": "11/22/2021",
+          "confidence": 100
+        },
+        "status": {
+          "value": "CLOSED",
+          "confidence": 100
+        },
+        "lineOfBusinessCode": {
+          "value": "72950.00",
+          "confidence": 82
+        },
+        "policyNumber": {
+          "value": "72950.00",
+          "confidence": 80
+        },
+        "financials": {
+          "totalIncurredAmount": {
+            "amount": "72950.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "totalPaidAmount": {
+            "amount": "72950.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "reserveAmount": {
+            "amount": "0.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "medicalPaidAmount": {
+            "amount": "18750.00",
+            "currency": "USD",
+            "confidence": 100
+          }
+        }
+      },
+      {
+        "_type": "cc.Claim",
+        "_confidence": 94,
+        "claimNumber": {
+          "value": "CGL-004",
+          "confidence": 89
+        },
+        "claimantName": {
+          "value": "Linda Foster",
+          "confidence": 92
+        },
+        "lossDate": {
+          "value": "02/14/2022",
+          "confidence": 100
+        },
+        "status": {
+          "value": "OPEN",
+          "confidence": 100
+        },
+        "lineOfBusinessCode": {
+          "value": "41400.00",
+          "confidence": 82
+        },
+        "policyNumber": {
+          "value": "6400.00",
+          "confidence": 80
+        },
+        "financials": {
+          "totalIncurredAmount": {
+            "amount": "41400.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "totalPaidAmount": {
+            "amount": "6400.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "reserveAmount": {
+            "amount": "35000.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "medicalPaidAmount": {
+            "amount": "4300.00",
+            "currency": "USD",
+            "confidence": 100
+          }
+        }
+      },
+      {
+        "_type": "cc.Claim",
+        "_confidence": 94,
+        "claimNumber": {
+          "value": "CGL-005",
+          "confidence": 89
+        },
+        "claimantName": {
+          "value": "Michael Wong",
+          "confidence": 92
+        },
+        "lossDate": {
+          "value": "06/30/2022",
+          "confidence": 100
+        },
+        "status": {
+          "value": "CLOSED",
+          "confidence": 100
+        },
+        "lineOfBusinessCode": {
+          "value": "35250.00",
+          "confidence": 82
+        },
+        "policyNumber": {
+          "value": "35250.00",
+          "confidence": 80
+        },
+        "financials": {
+          "totalIncurredAmount": {
+            "amount": "35250.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "totalPaidAmount": {
+            "amount": "35250.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "reserveAmount": {
+            "amount": "0.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "medicalPaidAmount": {
+            "amount": "0.00",
+            "currency": "USD",
+            "confidence": 100
+          }
+        }
+      },
+      {
+        "_type": "cc.Claim",
+        "_confidence": 94,
+        "claimNumber": {
+          "value": "CGL-006",
+          "confidence": 89
+        },
+        "claimantName": {
+          "value": "Patricia Adams",
+          "confidence": 92
+        },
+        "lossDate": {
+          "value": "09/11/2022",
+          "confidence": 100
+        },
+        "status": {
+          "value": "OPEN",
+          "confidence": 100
+        },
+        "lineOfBusinessCode": {
+          "value": "129200.00",
+          "confidence": 82
+        },
+        "policyNumber": {
+          "value": "4200.00",
+          "confidence": 80
+        },
+        "financials": {
+          "totalIncurredAmount": {
+            "amount": "129200.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "totalPaidAmount": {
+            "amount": "4200.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "reserveAmount": {
+            "amount": "125000.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "medicalPaidAmount": {
+            "amount": "0.00",
+            "currency": "USD",
+            "confidence": 100
+          }
+        }
+      },
+      {
+        "_type": "cc.Claim",
+        "_confidence": 94,
+        "claimNumber": {
+          "value": "CGL-007",
+          "confidence": 89
+        },
+        "claimantName": {
+          "value": "David Lee",
+          "confidence": 92
+        },
+        "lossDate": {
+          "value": "01/20/2023",
+          "confidence": 100
+        },
+        "status": {
+          "value": "CLOSED",
+          "confidence": 100
+        },
+        "lineOfBusinessCode": {
+          "value": "9700.00",
+          "confidence": 82
+        },
+        "policyNumber": {
+          "value": "9700.00",
+          "confidence": 80
+        },
+        "financials": {
+          "totalIncurredAmount": {
+            "amount": "9700.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "totalPaidAmount": {
+            "amount": "9700.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "reserveAmount": {
+            "amount": "0.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "medicalPaidAmount": {
+            "amount": "0.00",
+            "currency": "USD",
+            "confidence": 100
+          }
+        }
+      },
+      {
+        "_type": "cc.Claim",
+        "_confidence": 94,
+        "claimNumber": {
+          "value": "CGL-008",
+          "confidence": 89
+        },
+        "claimantName": {
+          "value": "Angela Rivera",
+          "confidence": 92
+        },
+        "lossDate": {
+          "value": "05/03/2023",
+          "confidence": 100
+        },
+        "status": {
+          "value": "OPEN",
+          "confidence": 100
+        },
+        "lineOfBusinessCode": {
+          "value": "20900.00",
+          "confidence": 82
+        },
+        "policyNumber": {
+          "value": "2900.00",
+          "confidence": 80
+        },
+        "financials": {
+          "totalIncurredAmount": {
+            "amount": "20900.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "totalPaidAmount": {
+            "amount": "2900.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "reserveAmount": {
+            "amount": "18000.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "medicalPaidAmount": {
+            "amount": "2100.00",
+            "currency": "USD",
+            "confidence": 100
+          }
+        }
+      },
+      {
+        "_type": "cc.Claim",
+        "_confidence": 94,
+        "claimNumber": {
+          "value": "CGL-009",
+          "confidence": 89
+        },
+        "claimantName": {
+          "value": "James Patel",
+          "confidence": 92
+        },
+        "lossDate": {
+          "value": "08/17/2023",
+          "confidence": 100
+        },
+        "status": {
+          "value": "CLOSED",
+          "confidence": 100
+        },
+        "lineOfBusinessCode": {
+          "value": "28200.00",
+          "confidence": 82
+        },
+        "policyNumber": {
+          "value": "28200.00",
+          "confidence": 80
+        },
+        "financials": {
+          "totalIncurredAmount": {
+            "amount": "28200.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "totalPaidAmount": {
+            "amount": "28200.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "reserveAmount": {
+            "amount": "0.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "medicalPaidAmount": {
+            "amount": "9400.00",
+            "currency": "USD",
+            "confidence": 100
+          }
+        }
+      },
+      {
+        "_type": "cc.Claim",
+        "_confidence": 94,
+        "claimNumber": {
+          "value": "CGL-010",
+          "confidence": 89
+        },
+        "claimantName": {
+          "value": "Nancy Scott",
+          "confidence": 92
+        },
+        "lossDate": {
+          "value": "11/05/2023",
+          "confidence": 100
+        },
+        "status": {
+          "value": "OPEN",
+          "confidence": 100
+        },
+        "lineOfBusinessCode": {
+          "value": "10700.00",
+          "confidence": 82
+        },
+        "policyNumber": {
+          "value": "1200.00",
+          "confidence": 80
+        },
+        "financials": {
+          "totalIncurredAmount": {
+            "amount": "10700.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "totalPaidAmount": {
+            "amount": "1200.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "reserveAmount": {
+            "amount": "9500.00",
+            "currency": "USD",
+            "confidence": 100
+          },
+          "medicalPaidAmount": {
+            "amount": "0.00",
+            "currency": "USD",
+            "confidence": 100
+          }
+        }
+      }
+    ]
+  }
+}
