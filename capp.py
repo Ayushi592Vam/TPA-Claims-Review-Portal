@@ -890,6 +890,19 @@ st.markdown("""
         background-color: #1c2128 !important;
     }
     div[data-testid="stButton"] button:disabled { opacity: 0.3 !important; }
+    /* Keep action icon buttons (👁 ✏) fixed-size and inline on all viewports */
+    div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button {
+        min-width: 32px !important;
+        max-width: 44px !important;
+        width: 100% !important;
+        padding: 4px 2px !important;
+        font-size: 14px !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
     div[role="dialog"] {
         background-color: #0d1117 !important;
         border: 1px solid #30363d !important;
@@ -2268,7 +2281,7 @@ if uploaded:
                     unsafe_allow_html=True
                 )
 
-            hc = st.columns([1.8, 1.5, 1.8, 1.8, 0.55, 0.55, 0.45])
+            hc = st.columns([1.6, 1.3, 1.6, 1.6, 0.7, 0.7, 0.5])
             with hc[0]: st.markdown("**SCHEMA FIELD**")
             with hc[1]: st.markdown("**CONF**")
             with hc[2]: st.markdown("**EXTRACTED VALUE**")
@@ -2329,7 +2342,7 @@ if uploaded:
                     unsafe_allow_html=True
                 )
 
-                cl, cc, co, cm, ce, cb, cx = st.columns([1.8, 1.5, 1.8, 1.8, 0.55, 0.55, 0.45], gap="small")
+                cl, cc, co, cm, ce, cb, cx = st.columns([1.6, 1.3, 1.6, 1.6, 0.7, 0.7, 0.5], gap="small")
 
                 with cl:
                     _cur_val  = st.session_state.get(mk, info.get("modified", info["value"]))
@@ -2431,7 +2444,7 @@ if uploaded:
 
         else:
             # ── PLAIN MODE ──
-            hc = st.columns([2, 2.6, 2.6, 0.6, 0.6, 0.5])
+            hc = st.columns([1.8, 2.4, 2.4, 0.8, 0.8, 0.4])
             with hc[0]: st.markdown("**FIELD**")
             with hc[1]: st.markdown("**EXTRACTED VALUE**")
             with hc[2]: st.markdown("**MODIFIED VALUE**")
@@ -2445,7 +2458,7 @@ if uploaded:
                 if xk not in st.session_state: st.session_state[xk] = True
                 if mk not in st.session_state: st.session_state[mk] = info.get("modified", info["value"])
 
-                cl, co, cm, ce, cb, cx = st.columns([2, 2.6, 2.6, 0.9, 0.9, 0.5], gap="small")
+                cl, co, cm, ce, cb, cx = st.columns([1.8, 2.4, 2.4, 0.8, 0.8, 0.4], gap="small")
 
                 with cl:
                     _current_val = st.session_state.get(mk, info.get("modified", info["value"]))
