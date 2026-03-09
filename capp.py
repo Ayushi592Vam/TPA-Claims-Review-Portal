@@ -15,167 +15,6 @@ from PIL import Image, ImageDraw, ImageFont
 FEATURE_STORE_PATH = "feature_store/claims_json"
 os.makedirs(FEATURE_STORE_PATH, exist_ok=True)
 
-# ==============================
-# YAML CONFIG LOADER
-# ==============================
-CONFIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
-
-def _parse_yaml_simple(text: str) -> dict:
-    """
-    Minimal pure-Python YAML parser that handles the subset used in config files:
-    - key: value  (string, int, float, blank/null)
-    - key:        (null value)
-    - - list item
-    - Nested indentation
-    - # comments
-    Does NOT handle anchors, multi-line strings, or complex YAML.
-    """
-    def _cast(v: str):
-        v = v.strip()
-        if not v or v.lower() in ("null", "~", ""):
-            return None
-        if v.lower() == "true":  return True
-        if v.lower() == "false": return False
-        try:    return int(v)
-        except: pass
-        try:    return float(v)
-        except: pass
-        return v.strip('"').strip("'")
-
-    lines   = text.splitlines()
-    root    = {}
-    stack   = [(0, root)]   # (indent_level, current_dict)
-    cur_key = None
-
-    for raw in lines:
-        if not raw.strip() or raw.strip().startswith("#"):
-            continue
-        indent = len(raw) - len(raw.lstrip())
-        line   = raw.strip()
-
-        # Pop stack to match current indent
-        while len(stack) > 1 and stack[-1][0] >= indent:
-            stack.pop()
-        parent = stack[-1][1]
-
-        if line.startswith("- "):          # list item
-            val = line[2:].strip()
-            if cur_key and isinstance(parent, dict):
-                if not isinstance(parent.get(cur_key), list):
-                    parent[cur_key] = []
-                parent[cur_key].append(_cast(val))
-        elif ":" in line:
-            parts = line.split(":", 1)
-            key   = parts[0].strip().strip('"').strip("'")
-            val   = parts[1].strip() if len(parts) > 1 else ""
-            # Strip inline comment
-            if " #" in val:
-                val = val[:val.index(" #")].strip()
-            cur_key = key
-            if val:
-                parent[key] = _cast(val)
-            else:
-                parent[key] = {}
-                stack.append((indent + 2, parent[key]))
-
-    return root
-
-
-def load_schema_config(schema_filename: str) -> dict | None:
-    """
-    Load a schema config from /config/<schema_filename>.
-    Returns None if file not found (app falls back to hardcoded defaults).
-    """
-    path = os.path.join(CONFIG_DIR, schema_filename)
-    if not os.path.exists(path):
-        return None
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            raw = _parse_yaml_simple(f.read())
-        return raw
-    except Exception as e:
-        return None
-
-
-def _merge_schema_from_config(hardcoded: dict, cfg: dict | None) -> dict:
-    """
-    Merge a loaded YAML config on top of hardcoded defaults.
-    YAML wins for required_fields, accepted_fields, field_aliases.
-    Hardcoded UI keys (color, icon, css_cls) are preserved.
-    """
-    if not cfg:
-        return hardcoded
-
-    merged = dict(hardcoded)  # start from hardcoded
-
-    schema_block = cfg.get("schema", {})
-    for k in ("version", "description"):
-        if schema_block.get(k):
-            merged[k] = schema_block[k]
-
-    # required_fields from YAML
-    if cfg.get("required_fields"):
-        rf = cfg["required_fields"]
-        if isinstance(rf, dict):  # parsed as dict if items are indented as keys
-            rf = list(rf.keys())
-        if isinstance(rf, list):
-            merged["required_fields"] = [str(f) for f in rf if f]
-
-    # accepted_fields from YAML
-    if cfg.get("accepted_fields"):
-        af = cfg["accepted_fields"]
-        if isinstance(af, dict):
-            af = list(af.keys())
-        if isinstance(af, list):
-            merged["accepted_fields"] = [str(f) for f in af if f]
-
-    # field_aliases from YAML
-    if cfg.get("field_aliases") and isinstance(cfg["field_aliases"], dict):
-        aliases = {}
-        for field, vals in cfg["field_aliases"].items():
-            if isinstance(vals, list):
-                aliases[field] = [str(v) for v in vals if v]
-            elif isinstance(vals, str):
-                aliases[field] = [vals]
-        if aliases:
-            merged["field_aliases"] = aliases
-
-    # confidence field_thresholds
-    conf_block = cfg.get("confidence", {})
-    if isinstance(conf_block, dict):
-        if conf_block.get("field_thresholds") and isinstance(conf_block["field_thresholds"], dict):
-            merged["field_thresholds"] = {
-                k: int(v) for k, v in conf_block["field_thresholds"].items()
-                if v is not None
-            }
-        if conf_block.get("global_threshold") is not None:
-            merged["config_threshold"] = int(conf_block["global_threshold"])
-
-    # export settings
-    if cfg.get("export") and isinstance(cfg["export"], dict):
-        merged["export_config"] = cfg["export"]
-
-    return merged
-
-
-# Track which config files loaded successfully (shown in UI)
-_CONFIG_LOAD_STATUS = {}
-
-def _load_all_configs(hardcoded_schemas: dict) -> dict:
-    """Load all YAML configs and merge into hardcoded schemas."""
-    filemap = {"Guidewire": "guidewire.yaml", "Duck Creek": "duck_creek.yaml"}
-    result  = {}
-    for name, schema in hardcoded_schemas.items():
-        fname = filemap.get(name)
-        cfg   = load_schema_config(fname) if fname else None
-        result[name] = _merge_schema_from_config(schema, cfg)
-        _CONFIG_LOAD_STATUS[name] = {
-            "file":   fname,
-            "loaded": cfg is not None,
-            "path":   os.path.join(CONFIG_DIR, fname) if fname else "",
-        }
-    return result
-
 
 # ==============================
 # UNICODE NORMALIZER
@@ -202,570 +41,6 @@ def normalize_str(s: str) -> str:
     if not s:
         return s
     return s.translate(_DASH_TABLE)
-
-# ==============================
-# SCHEMA DEFINITIONS
-# ==============================
-_HARDCODED_SCHEMAS = {
-    "Guidewire": {
-        "color":   "#58a6ff",
-        "icon":    "🔵",
-        "css_cls": "guide",
-        "version": "ClaimCenter 10.x",
-        "description": "Guidewire ClaimCenter 10.x compatible format",
-        "required_fields": [
-            "Claim Number", "Claimant Name", "Loss Date",
-            "Total Incurred", "Total Paid", "Reserve",
-            "Status", "Line of Business", "Policy Number",
-        ],
-        "accepted_fields": [
-            "Claim Number", "Claimant Name", "Loss Date", "Date Reported",
-            "Total Incurred", "Total Paid", "Reserve", "Indemnity Paid",
-            "Medical Paid", "Expense Paid", "Status", "Line of Business",
-            "Policy Number", "Policy Period Start", "Policy Period End",
-            "Carrier", "Insured Name", "Description of Loss",
-            "Cause of Loss", "Litigation Flag", "Adjuster Name",
-            "Adjuster Phone", "Branch Code", "Department Code",
-            "Coverage Type", "Deductible", "Subrogation Amount",
-            "Recovery Amount", "Open/Closed", "Reopen Date",
-            "Last Activity Date", "Notes",
-        ],
-        "field_aliases": {
-            "Claim Number":      ["claim_id", "claim number", "claim no", "claim#", "claimid", "claim ref"],
-            "Claimant Name":     ["claimant name", "claimant", "insured name", "name", "injured party"],
-            "Loss Date":         ["date of loss", "loss date", "loss dt", "date of accident", "incident date"],
-            "Date Reported":     ["date reported", "reported date", "report date"],
-            "Total Incurred":    ["total incurred", "incurred", "total incurred amount"],
-            "Total Paid":        ["total paid", "amount paid", "paid amount"],
-            "Reserve":           ["reserve", "outstanding reserve", "case reserve"],
-            "Indemnity Paid":    ["indemnity paid", "indemnity", "wage loss paid"],
-            "Medical Paid":      ["medical paid", "medical", "med paid"],
-            "Expense Paid":      ["expense paid", "expense", "legal expense"],
-            "Status":            ["status", "claim status", "open/closed"],
-            "Line of Business":  ["line of business", "lob", "coverage line"],
-            "Policy Number":     ["policy number", "policy no", "policy#", "policy id"],
-            "Insured Name":      ["insured name", "insured", "employer name"],
-            "Description of Loss": ["description of loss", "loss description", "description", "narrative"],
-            "Cause of Loss":     ["cause of loss", "cause", "type of loss", "peril"],
-            "Adjuster Name":     ["adjuster name", "adjuster", "examiner"],
-        },
-    },
-    "Duck Creek": {
-        "color":   "#f0883e",
-        "icon":    "🟠",
-        "css_cls": "duck",
-        "version": "Claims 6.x",
-        "description": "Duck Creek Claims 6.x transaction format",
-        "required_fields": [
-            "Claim Id", "Claimant Name", "Loss Date",
-            "Total Incurred", "Total Paid", "Reserve",
-            "Policy Number", "Claim Status",
-        ],
-        "accepted_fields": [
-            "Claim Id", "Transaction Id", "Claimant Name", "Loss Date",
-            "Date Reported", "Total Incurred", "Total Paid", "Reserve",
-            "Indemnity Paid", "Medical Paid", "Expense Paid",
-            "Policy Number", "Policy Effective Date", "Policy Expiry Date",
-            "Claim Status", "Cause of Loss", "Description of Loss",
-            "Insured Name", "Carrier Name", "Line of Business",
-            "Adjuster Id", "Adjuster Name", "Office Code",
-            "Jurisdiction", "State Code", "Deductible Amount",
-            "Subrogation Flag", "Recovery Amount", "Litigation Flag",
-            "Date Closed", "Date Reopened", "Last Updated Date", "Notes",
-        ],
-        "field_aliases": {
-            "Claim Id":          ["claim_id", "claim number", "claim no", "claim#", "claimid", "claim ref"],
-            "Claimant Name":     ["claimant name", "claimant", "insured name", "name", "injured party"],
-            "Loss Date":         ["date of loss", "loss date", "loss dt", "date of accident", "incident date"],
-            "Date Reported":     ["date reported", "reported date", "report date"],
-            "Total Incurred":    ["total incurred", "incurred", "total incurred amount"],
-            "Total Paid":        ["total paid", "amount paid", "paid amount"],
-            "Reserve":           ["reserve", "outstanding reserve", "case reserve"],
-            "Indemnity Paid":    ["indemnity paid", "indemnity", "wage loss paid"],
-            "Medical Paid":      ["medical paid", "medical", "med paid"],
-            "Expense Paid":      ["expense paid", "expense", "legal expense"],
-            "Claim Status":      ["status", "claim status", "open/closed"],
-            "Line of Business":  ["line of business", "lob", "coverage line"],
-            "Policy Number":     ["policy number", "policy no", "policy#", "policy id"],
-            "Insured Name":      ["insured name", "insured", "employer name"],
-            "Description of Loss": ["description of loss", "loss description", "description", "narrative"],
-            "Cause of Loss":     ["cause of loss", "cause", "type of loss", "peril"],
-            "Carrier Name":      ["carrier", "carrier name", "insurance company"],
-        },
-    },
-}
-
-
-# Load YAML configs and merge over hardcoded defaults
-SCHEMAS = _load_all_configs(_HARDCODED_SCHEMAS)
-
-# ==============================
-# SCHEMA MAPPING + CONFIDENCE ENGINE
-# ==============================
-def _word_tokens(s: str) -> set:
-    """Split a field name into meaningful word tokens, ignoring stopwords."""
-    stopwords = {"of", "the", "a", "an", "and", "or", "to", "in", "for"}
-    words = re.sub(r"[_/#+]", " ", s.lower()).split()
-    return {w for w in words if len(w) > 1 and w not in stopwords}
-
-
-def _str_similarity(a: str, b: str) -> float:
-    """
-    Word-token Jaccard similarity — only whole words count, not characters.
-    Returns 0.0–1.0: 1.0 = identical token sets, 0.0 = no shared words.
-    """
-    a_tok = _word_tokens(a)
-    b_tok = _word_tokens(b)
-    if not a_tok or not b_tok:
-        return 0.0
-    if a_tok == b_tok:
-        return 1.0
-    intersection = a_tok & b_tok
-    union        = a_tok | b_tok
-    return len(intersection) / len(union)
-
-
-def _header_match_score(excel_col: str, schema_field: str, aliases: list) -> float:
-    """Score 0-1: how well an Excel column name matches a schema field."""
-    ec_norm = excel_col.lower().replace("_", " ").strip()
-    for alias in aliases:
-        if ec_norm == alias.lower():
-            return 1.0
-    best = max((_str_similarity(ec_norm, a.lower()) for a in aliases), default=0.0)
-    return max(best, _str_similarity(ec_norm, schema_field.lower()))
-
-
-def _value_quality_score(value: str, schema_field: str) -> float:
-    """Score 0-1: how good the extracted value looks for the given field type."""
-    if not value or not value.strip():
-        return 0.0
-    v = value.strip()
-    sf = schema_field.lower()
-
-    if any(x in sf for x in ["date", "loss dt"]):
-        import re as _re
-        date_patterns = [
-            r"\d{2}-\d{2}-\d{4}", r"\d{4}-\d{2}-\d{2}",
-            r"\d{2}/\d{2}/\d{4}", r"\d{1,2}/\d{1,2}/\d{2,4}",
-        ]
-        for p in date_patterns:
-            if _re.fullmatch(p, v):
-                return 1.0
-        return 0.4
-
-    if any(x in sf for x in ["incurred", "paid", "reserve", "amount", "deductible", "recovery"]):
-        import re as _re
-        clean = v.replace(",", "").replace("$", "").replace("(", "-").replace(")", "")
-        try:
-            float(clean)
-            return 1.0
-        except ValueError:
-            return 0.3
-
-    if any(x in sf for x in ["id", "number", "no", "code"]):
-        if len(v) >= 2:
-            return 0.9
-        return 0.5
-
-    if "status" in sf:
-        known = {"open", "closed", "pending", "reopened", "denied", "settled"}
-        if v.lower() in known:
-            return 1.0
-        return 0.7
-
-    return 0.85 if len(v) > 0 else 0.0
-
-
-_MIN_HEADER_MATCH = 0.70
-
-def map_claim_to_schema(claim: dict, schema_name: str,
-                        title_fields: dict = None) -> dict:
-    """
-    Map extracted Excel fields to schema fields.
-    Falls back to title_fields for policy-level data not found in columns.
-    Fields with no match are left unmapped (not returned).
-    """
-    if schema_name not in SCHEMAS:
-        return {}
-
-    schema       = SCHEMAS[schema_name]
-    aliases      = schema.get("field_aliases", {})
-    accepted     = schema["accepted_fields"]
-    title_fields = title_fields or {}
-    result       = {}
-
-    for schema_field in accepted:
-        field_aliases  = aliases.get(schema_field, [schema_field.lower()])
-        best_excel_col = None
-        best_header_sc = 0.0
-        best_info      = None
-
-        for excel_col, info in claim.items():
-            h_sc = _header_match_score(excel_col, schema_field, field_aliases)
-            if h_sc > best_header_sc:
-                best_header_sc = h_sc
-                best_excel_col = excel_col
-                best_info      = info
-
-        if best_header_sc >= _MIN_HEADER_MATCH and best_info is not None:
-            val  = best_info.get("modified", best_info.get("value", ""))
-            v_sc = _value_quality_score(val, schema_field)
-            conf = round(best_header_sc * 0.40 * 100 + v_sc * 0.60 * 100)
-            result[schema_field] = {
-                "excel_field":  best_excel_col,
-                "value":        val,
-                "header_score": round(best_header_sc * 100),
-                "value_score":  round(v_sc * 100),
-                "confidence":   conf,
-                "is_required":  schema_field in schema["required_fields"],
-                "info":         best_info,
-                "from_title":   False,
-            }
-
-        elif schema_field in title_fields:
-            tf   = title_fields[schema_field]
-            val  = tf.get("value", "")
-            v_sc = _value_quality_score(val, schema_field)
-            conf = min(95, round(1.0 * 0.40 * 100 + v_sc * 0.60 * 100))
-            result[schema_field] = {
-                "excel_field":  f"[title row {tf['excel_row']}]",
-                "value":        val,
-                "header_score": 100,
-                "value_score":  round(v_sc * 100),
-                "confidence":   conf,
-                "is_required":  schema_field in schema["required_fields"],
-                "info":         tf,
-                "from_title":   True,
-            }
-
-    return result
-
-
-def extract_title_fields(merged_meta: dict) -> dict:
-    """
-    Parse policy-level fields from merged title/header cells.
-    Returns dict: schema_field_name -> info dict with value + source='title_row'.
-    """
-    found = {}
-
-    title_rows = sorted(
-        [v for v in merged_meta.values() if v.get("value") and v["type"] in ("TITLE", "HEADER")],
-        key=lambda x: (x["row_start"], x["col_start"])
-    )
-
-    for m in title_rows:
-        text = str(m["value"]).strip()
-        r, c = m["excel_row"], m["excel_col"]
-
-        def _info(val):
-            return {"value": val, "original": val, "modified": val,
-                    "source": "title_row", "excel_row": r, "excel_col": c,
-                    "title_text": text}
-
-        pol = re.search(r'Policy\s*(?:#|No\.?|Number)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\-/\.]+)',
-                        text, re.IGNORECASE)
-        if pol and "Policy Number" not in found:
-            found["Policy Number"] = _info(pol.group(1).strip())
-
-        ins = re.search(r'Insured\s*[:\-]\s*([^\|;]+)', text, re.IGNORECASE)
-        if ins and "Insured Name" not in found:
-            found["Insured Name"] = _info(ins.group(1).strip())
-
-        carr = re.search(r'Carrier\s*[:\-]\s*([^\|;]+)', text, re.IGNORECASE)
-        if carr:
-            val = carr.group(1).strip()
-            if "Carrier" not in found:
-                found["Carrier"] = _info(val)
-            if "Carrier Name" not in found:
-                found["Carrier Name"] = _info(val)
-
-        period = re.search(
-            r'Period\s*[:\-]?\s*'
-            r'(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})'
-            r'[\s\u2013\u2014\-to]+'
-            r'(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
-            text, re.IGNORECASE
-        )
-        if period:
-            s, e = period.group(1).strip(), period.group(2).strip()
-            for k, v in [("Policy Period Start", s), ("Policy Period End", e),
-                         ("Policy Effective Date", s), ("Policy Expiry Date", e)]:
-                if k not in found:
-                    found[k] = _info(v)
-
-        lob_map = [
-            (r'commercial\s+general\s+liability', "Commercial General Liability"),
-            (r'\bCGL\b',                          "Commercial General Liability"),
-            (r'workers[\s\-]+comp',               "Workers Compensation"),
-            (r'commercial\s+auto',                "Commercial Auto"),
-            (r'commercial\s+property',            "Commercial Property"),
-            (r'professional\s+liability',         "Professional Liability"),
-            (r'\bE\s*&\s*O\b',                    "Professional Liability"),
-            (r'general\s+liability',              "General Liability"),
-            (r'\bumbrella\b',                     "Umbrella"),
-            (r'excess\s+liability',               "Excess Liability"),
-        ]
-        for pattern, lob_val in lob_map:
-            if re.search(pattern, text, re.IGNORECASE) and "Line of Business" not in found:
-                found["Line of Business"] = _info(lob_val)
-                break
-
-    return found
-
-
-# ==============================
-# SETTINGS DIALOG
-# ==============================
-@st.dialog("Settings", width="large")
-def show_settings_dialog():
-    global SCHEMAS
-    st.markdown("### Configuration")
-
-    st.markdown("---")
-    st.markdown("#### Extraction Confidence Threshold")
-    st.markdown(
-        "<div style='color:#8b949e;font-size:13px;margin-bottom:8px;'>"
-        "Fields with confidence below this threshold will be flagged for manual review."
-        "</div>",
-        unsafe_allow_html=True
-    )
-
-    conf = st.slider(
-        "Confidence threshold", min_value=0, max_value=100,
-        value=st.session_state.get("conf_threshold", 80),
-        step=5, format="%d%%", label_visibility="visible"
-    )
-    st.session_state["conf_threshold"] = conf
-
-    bar_color = "#3fb950" if conf >= 70 else "#d29922" if conf >= 40 else "#f85149"
-    level_txt = (
-        "High confidence — minimal manual review needed" if conf >= 70
-        else "Medium — review flagged fields carefully" if conf >= 40
-        else "Low — most fields will require manual review"
-    )
-    st.markdown(
-        f"<div class=\"conf-bar-wrap\">"
-        f"<div class=\"conf-bar-fill\" style=\"width:{conf}%;background:{bar_color};\"></div>"
-        f"</div>"
-        f"<div style=\"color:{bar_color};font-size:12px;margin-top:5px;\">{level_txt}</div>",
-        unsafe_allow_html=True
-    )
-
-    st.markdown("---")
-    st.markdown("#### Export Schema")
-    st.markdown(
-        "<div style='color:#8b949e;font-size:13px;margin-bottom:12px;'>"
-        "Activate a schema to map extracted fields to a standard format. "
-        "Custom fields can be added per schema."
-        "</div>",
-        unsafe_allow_html=True
-    )
-
-    active_schema = st.session_state.get("active_schema", None)
-
-    for schema_name, schema_def in SCHEMAS.items():
-        is_active  = active_schema == schema_name
-        border_col = schema_def["color"] if is_active else "#30363d"
-        bg_col     = "#1c2128" if is_active else "#161b22"
-        active_tag = (
-            f"<span style=\"font-size:10px;color:{schema_def['color']};margin-left:8px;font-weight:bold;\">● ACTIVE</span>"
-            if is_active else ""
-        )
-        custom_count = len(st.session_state.get(f"custom_fields_{schema_name}", []))
-
-        st.markdown(
-            f"<div style=\"background:{bg_col};border:1px solid {border_col};border-radius:8px;"
-            f"padding:12px 14px;margin-bottom:4px;\">"
-            f"<div style=\"display:flex;align-items:center;\">"
-            f"<span style=\"font-size:15px;font-weight:bold;color:white;\">{schema_def['icon']} {schema_name}</span>"
-            f"<span style=\"font-size:11px;color:#8b949e;margin-left:8px;\">{schema_def['version']}</span>"
-            f"{active_tag}</div>"
-            f"<div style=\"font-size:12px;color:#8b949e;margin-top:4px;\">{schema_def['description']}</div>"
-            f"</div>",
-            unsafe_allow_html=True
-        )
-
-        bc1, bc2, bc3 = st.columns([1, 1, 1])
-        with bc1:
-            lbl = "✓ Deactivate" if is_active else "Activate"
-            if st.button(lbl, key=f"activate_{schema_name}", use_container_width=True):
-                st.session_state["active_schema"] = None if is_active else schema_name
-                st.rerun()
-        with bc2:
-            if st.button("View Fields", key=f"view_{schema_name}", use_container_width=True):
-                st.session_state["schema_popup_target"] = schema_name
-                st.session_state["schema_popup_tab"]    = "required"
-                st.rerun()
-        with bc3:
-            if st.button(f"Custom Fields ({custom_count})", key=f"custom_{schema_name}", use_container_width=True):
-                st.session_state["schema_popup_target"] = schema_name
-                st.session_state["schema_popup_tab"]    = "custom"
-                st.rerun()
-
-        st.markdown("<div style=\"height:6px;\"></div>", unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.markdown("#### 📁 YAML Config Files")
-    st.markdown(
-        "<div style='color:#8b949e;font-size:13px;margin-bottom:8px;'>"
-        f"Config directory: <code>{CONFIG_DIR}</code>"
-        "</div>",
-        unsafe_allow_html=True
-    )
-    for schema_name, status in _CONFIG_LOAD_STATUS.items():
-        sc      = SCHEMAS.get(schema_name, {})
-        col_st  = sc.get("color", "#8b949e")
-        if status["loaded"]:
-            badge = f"<span style=\"background:#1c2d1c;border:1px solid #3fb950;border-radius:4px;padding:1px 7px;font-size:10px;color:#3fb950;\">✓ Loaded</span>"
-        else:
-            badge = f"<span style=\"background:#2d1515;border:1px solid #f85149;border-radius:4px;padding:1px 7px;font-size:10px;color:#f85149;\">✗ Not found — using defaults</span>"
-        st.markdown(
-            f"<div style=\"background:#161b22;border:1px solid #30363d;border-radius:6px;"
-            f"padding:8px 12px;margin-bottom:6px;\">"
-            f"<div style=\"display:flex;align-items:center;gap:8px;\">"
-            f"<span style=\"color:{col_st};font-weight:bold;font-size:13px;\">{sc.get('icon','')} {schema_name}</span>"
-            f"{badge}</div>"
-            f"<div style=\"font-size:10px;color:#8b949e;margin-top:3px;\">📄 {status['file']}</div>"
-            f"</div>",
-            unsafe_allow_html=True
-        )
-
-    if st.button("🔄 Reload YAML Configs", use_container_width=True, key="reload_yaml_cfg"):
-        SCHEMAS = _load_all_configs(_HARDCODED_SCHEMAS)
-        st.success("✅ Configs reloaded from disk")
-        st.rerun()
-
-    st.markdown("---")
-    r1, r2 = st.columns(2)
-    with r1:
-        if st.button("Reset Defaults", use_container_width=True):
-            st.session_state["conf_threshold"] = 80
-            st.session_state["active_schema"]  = None
-            for s in SCHEMAS:
-                st.session_state[f"custom_fields_{s}"] = []
-            st.rerun()
-    with r2:
-        if st.button("Close", type="primary", use_container_width=True):
-            st.rerun()
-
-
-@st.dialog("Schema Field Manager", width="large")
-def show_schema_fields_dialog(schema_name):
-    schema     = SCHEMAS[schema_name]
-    custom_key = f"custom_fields_{schema_name}"
-    if custom_key not in st.session_state:
-        st.session_state[custom_key] = []
-
-    st.markdown(f"### {schema['icon']} {schema_name} — {schema['version']}")
-    st.markdown(
-        f"<div style='color:#8b949e;font-size:13px;margin-bottom:12px;'>{schema['description']}</div>",
-        unsafe_allow_html=True
-    )
-
-    tab_req, tab_accepted, tab_custom = st.tabs([
-        "Required Fields", "All Accepted Fields", "My Custom Fields"
-    ])
-
-    with tab_req:
-        st.markdown(
-            "These fields are **required** by the schema and will always be "
-            "included when this schema is active."
-        )
-        pills = "".join(
-            f"<span class=\"field-pill field-pill-required\">✓ {f}</span>"
-            for f in schema["required_fields"]
-        )
-        st.markdown(f"<div style=\"margin:12px 0;\">{pills}</div>", unsafe_allow_html=True)
-
-    with tab_accepted:
-        st.markdown(
-            "All fields **accepted** by this schema. Only these fields can be "
-            "added as custom fields."
-        )
-        optional = [f for f in schema["accepted_fields"] if f not in schema["required_fields"]]
-        req_pills = "".join(
-            f"<span class=\"field-pill field-pill-required\">✓ {f}</span>"
-            for f in schema["required_fields"]
-        )
-        opt_pills = "".join(
-            f"<span class=\"field-pill\">{f}</span>"
-            for f in optional
-        )
-        st.markdown(
-            f"<div style=\"margin:10px 0;\"><b style=\"color:#8b949e;font-size:11px;\">REQUIRED</b><br>{req_pills}</div>"
-            f"<div style=\"margin:10px 0;\"><b style=\"color:#8b949e;font-size:11px;\">OPTIONAL</b><br>{opt_pills}</div>",
-            unsafe_allow_html=True
-        )
-
-    with tab_custom:
-        st.markdown(
-            "Select **optional fields** from the accepted list to include "
-            "alongside required fields in the export."
-        )
-        custom_fields = st.session_state[custom_key]
-        already_added = set(custom_fields) | set(schema["required_fields"])
-        available     = [f for f in schema["accepted_fields"] if f not in already_added]
-
-        if available:
-            st.markdown("#### Add Optional Field")
-            sel_col, add_col = st.columns([4, 1])
-            with sel_col:
-                chosen = st.selectbox(
-                    "Pick field",
-                    options=["— select a field —"] + available,
-                    key=f"new_field_sel_{schema_name}",
-                    label_visibility="collapsed"
-                )
-            with add_col:
-                if st.button("Add", key=f"add_field_btn_{schema_name}",
-                             use_container_width=True, type="primary"):
-                    if chosen and chosen != "— select a field —":
-                        st.session_state[custom_key].append(chosen)
-                        st.rerun()
-        else:
-            st.info("All accepted optional fields have already been added.")
-
-        st.markdown("#### Active Custom Fields")
-        if not custom_fields:
-            st.markdown(
-                "<div style=\"color:#8b949e;font-size:13px;padding:8px 0;\">"
-                "No optional fields added yet."
-                "</div>",
-                unsafe_allow_html=True
-            )
-        else:
-            for idx, cf in enumerate(list(custom_fields)):
-                cf1, cf2 = st.columns([5, 1])
-                with cf1:
-                    is_req = cf in schema["required_fields"]
-                    cls    = "field-pill-required" if is_req else "field-pill-custom"
-                    st.markdown(
-                        f"<span class=\"field-pill {cls}\">{'✓' if is_req else '+'} {cf}</span>",
-                        unsafe_allow_html=True
-                    )
-                with cf2:
-                    if st.button("Remove", key=f"del_cf_{schema_name}_{idx}",
-                                 use_container_width=True):
-                        st.session_state[custom_key].pop(idx)
-                        st.rerun()
-            st.markdown("---")
-            if st.button("Clear All", key=f"clear_all_{schema_name}"):
-                st.session_state[custom_key] = []
-                st.rerun()
-
-        st.markdown("---")
-        total = len(schema["required_fields"]) + len(custom_fields)
-        st.markdown(
-            f"<div style=\"background:#161b22;border:1px solid #30363d;"
-            f"border-radius:8px;padding:10px 14px;\">"
-            f"<span style=\"color:#8b949e;font-size:12px;\">"
-            f"Required: <b style=\"color:#58a6ff;\">{len(schema['required_fields'])}</b> &nbsp;|&nbsp; "
-            f"Custom: <b style=\"color:#3fb950;\">{len(custom_fields)}</b> &nbsp;|&nbsp; "
-            f"Total export fields: <b style=\"color:white;\">{total}</b>"
-            f"</span></div>",
-            unsafe_allow_html=True
-        )
-
 
 # ==============================
 # PAGE CONFIG
@@ -836,6 +111,7 @@ st.markdown("""
         border: 1px solid #30363d !important;
         border-radius: 6px !important;
     }
+    /* Selectbox — read-only dropdown, no typing/editing allowed */
     div[data-baseweb="select"] input {
         caret-color: transparent !important;
         pointer-events: none !important;
@@ -852,6 +128,7 @@ st.markdown("""
         box-shadow: none !important;
         outline: none !important;
     }
+    /* Remove the red focus ring Streamlit adds */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus {
         border-color: #30363d !important;
@@ -924,6 +201,7 @@ st.markdown("""
         border-radius:4px; padding:1px 6px; font-size:10px; color:#3fb950;
         margin-left:6px; vertical-align:middle;
     }
+    /* Hide invisible form submit buttons (used for Enter-key capture) */
     div[data-testid="stForm"] div[data-testid="stFormSubmitButton"] {
         display: none !important;
     }
@@ -931,13 +209,16 @@ st.markdown("""
         border: none !important;
         padding: 0 !important;
     }
+    /* TPA Records panel — full viewport height scroll */
     section[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlockBorderWrapper"] > div {
         max-height: none !important;
     }
+    /* Make the left nav scroll container stretch to bottom of page */
     div[data-testid="stVerticalBlock"] > div[style*="overflow"] {
         height: calc(100vh - 180px) !important;
         max-height: calc(100vh - 180px) !important;
     }
+    /* Equal size export selection buttons */
     .export-sel-btn div[data-testid="stButton"],
     .export-sel-btn div[data-testid="stButton"] > button {
         height: 38px !important;
@@ -964,48 +245,6 @@ st.markdown("""
         height: 38px !important;
         display: inline !important;
     }
-    .settings-btn div[data-testid="stButton"] button {
-        background: transparent !important;
-        border: 1px solid #30363d !important;
-        border-radius: 8px !important;
-        color: #8b949e !important;
-        font-size: 18px !important;
-        padding: 4px 10px !important;
-        transition: all 0.2s !important;
-    }
-    .settings-btn div[data-testid="stButton"] button:hover {
-        border-color: #58a6ff !important;
-        color: #58a6ff !important;
-        background: #1c2128 !important;
-        box-shadow: 0 0 8px rgba(88,166,255,0.4) !important;
-    }
-    .schema-badge {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: #1c2128; border: 1px solid #58a6ff;
-        border-radius: 20px; padding: 3px 10px;
-        font-size: 11px; color: #58a6ff; font-weight: 600;
-        margin-left: 10px; vertical-align: middle;
-    }
-    .schema-badge-duck  { border-color: #f0883e !important; color: #f0883e !important; }
-    .schema-badge-guide { border-color: #58a6ff !important; color: #58a6ff !important; }
-    .conf-bar-wrap {
-        background: #21262d; border-radius: 6px; height: 8px;
-        width: 100%; margin-top: 4px; overflow: hidden;
-    }
-    .conf-bar-fill {
-        height: 100%; border-radius: 6px;
-        background: linear-gradient(90deg, #3fb950, #58a6ff);
-        transition: width 0.3s ease;
-    }
-    .field-pill {
-        display: inline-block; background: #161b22;
-        border: 1px solid #30363d; border-radius: 12px;
-        padding: 3px 10px; font-size: 11px; color: #c9d1d9;
-        margin: 2px 3px;
-    }
-    .field-pill-required { border-color: #58a6ff !important; color: #58a6ff !important; background: #1c2128 !important; }
-    .field-pill-custom   { border-color: #3fb950 !important; color: #3fb950 !important; background: #1c2128 !important; }
-    div[role="dialog"] .stSlider { padding: 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1020,6 +259,7 @@ def get_sheet_names(file_path: str) -> list:
     wb    = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
     names = list(wb.sheetnames)
     wb.close()
+    # Put Summary first if present, preserving order of all other sheets
     summary = [n for n in names if n.strip().lower() == "summary"]
     others  = [n for n in names if n.strip().lower() != "summary"]
     return summary + others
@@ -1162,6 +402,7 @@ def extract_totals_row(file_path: str, sheet_name: str) -> dict:
 
     if totals_rows:
         totals["rows"] = totals_rows
+        # Store the excel_row of the first totals row so we can sort it in output
         totals["excel_row"] = totals_rows[0].get(list(totals_rows[0].keys())[0], {}).get("excel_row", 9999)
         agg = {}
         for row_data in totals_rows:
@@ -1200,13 +441,21 @@ def format_cell_value(value) -> str:
 
 
 def _apply_date_number_format(dt, nf: str) -> str:
+    """
+    Convert a datetime/date to a string by honouring the Excel number_format (nf).
+    Uses a single-pass regex replacement (longest tokens first) to avoid
+    partial-match bugs like dd→%d leaving a stray 'd'.
+    Falls back to MM-DD-YYYY when nf is empty/unrecognised.
+    """
     if not nf or nf.lower() in ("general", "@", ""):
         return dt.strftime("%m-%d-%Y")
 
-    fmt = re.sub(r'\[.*?\]', '', nf)
-    fmt = re.sub(r'["_*\\]', '', fmt)
+    # Strip Excel decorator chars that don't affect display
+    fmt = re.sub(r'\[.*?\]', '', nf)    # colour/locale brackets e.g. [$-409]
+    fmt = re.sub(r'["_*\\]', '', fmt)   # quotes, alignment chars
 
     result = fmt
+    # Protect h-adjacent mm (those mean minutes not months)
     result = re.sub(r'(?i)(?<=h)mm', '__MIN__', result)
     result = re.sub(r'(?i)mm(?=ss)', '__MIN__', result)
 
@@ -1221,6 +470,7 @@ def _apply_date_number_format(dt, nf: str) -> str:
             'am/pm': '%p', 'a/p': '%p',
         }.get(tok, m.group(0))
 
+    # Single-pass, longest tokens listed first to avoid partial replacements
     result = re.sub(
         r'(?i)yyyy|yy|mmmm|mmm|__min__|mm|dd|hh|ss|am/pm|a/p|d|h|s|m',
         _tok, result
@@ -1238,6 +488,7 @@ def format_cell_value_with_fmt(cell) -> str:
 
     nf = (cell.number_format or "").strip()
 
+    # Dates/datetimes: honour the cell's actual number_format
     if isinstance(value, (datetime.datetime, datetime.date)):
         return _apply_date_number_format(value, nf)
 
@@ -1465,7 +716,7 @@ def parse_rows(sheet_type, rows):
 
 
 # ==============================
-# EXCEL CELL RENDERER
+# EXCEL CELL RENDERER (simple grid)
 # ==============================
 _THEME_COLORS = {
     0: "FFFFFF", 1: "000000", 2: "EEECE1", 3: "1F497D",
@@ -1631,7 +882,7 @@ def crop_context(img, x1, y1, x2, y2, pad_x=220, pad_y=160):
 
 
 # ==============================
-# EYE POPUP
+# EYE POPUP — clean cell view
 # ==============================
 @st.dialog("Cell View", width="large")
 def show_eye_popup(field, info, excel_path, sheet_name):
@@ -1707,235 +958,17 @@ def show_eye_popup(field, info, excel_path, sheet_name):
 
 
 # ==============================
-# FORMAT CONVERTERS
+# FORMAT CONVERTER — Standard JSON only
+# (Sequential: titles first by excel_row, then records, then totals)
 # ==============================
-def to_duck_creek_xml(mapped_records: list, sheet_meta: dict) -> str:
-    import xml.etree.ElementTree as ET
-    from xml.dom import minidom
-
-    root = ET.Element("ClaimTransactionBatch")
-    root.set("xmlns", "http://www.duckcreek.com/claims/transaction/v6")
-    root.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-    root.set("batchDate", datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
-    root.set("source", "TPA_Claims_Review_Portal")
-    root.set("recordCount", str(len(mapped_records)))
-
-    _DC_XML_MAP = {
-        "Claim Id":          "ClaimId",
-        "Transaction Id":    "TransactionId",
-        "Claimant Name":     "ClaimantName",
-        "Loss Date":         "LossDate",
-        "Date Reported":     "DateReported",
-        "Total Incurred":    "TotalIncurred",
-        "Total Paid":        "TotalPaid",
-        "Reserve":           "Reserve",
-        "Indemnity Paid":    "IndemnityPaid",
-        "Medical Paid":      "MedicalPaid",
-        "Expense Paid":      "ExpensePaid",
-        "Policy Number":     "PolicyNumber",
-        "Policy Effective Date": "PolicyEffectiveDate",
-        "Policy Expiry Date":    "PolicyExpiryDate",
-        "Claim Status":      "ClaimStatus",
-        "Cause of Loss":     "CauseOfLoss",
-        "Description of Loss": "LossDescription",
-        "Insured Name":      "InsuredName",
-        "Carrier Name":      "CarrierName",
-        "Line of Business":  "LineOfBusiness",
-        "Adjuster Id":       "AdjusterId",
-        "Adjuster Name":     "AdjusterName",
-        "Office Code":       "OfficeCode",
-        "Jurisdiction":      "Jurisdiction",
-        "State Code":        "StateCode",
-        "Deductible Amount": "DeductibleAmount",
-        "Subrogation Flag":  "SubrogationFlag",
-        "Recovery Amount":   "RecoveryAmount",
-        "Litigation Flag":   "LitigationFlag",
-        "Date Closed":       "DateClosed",
-        "Date Reopened":     "DateReopened",
-        "Last Updated Date": "LastUpdatedDate",
-        "Notes":             "Notes",
-    }
-
-    for rec in mapped_records:
-        txn = ET.SubElement(root, "ClaimTransaction")
-        txn.set("transactionType", "UPDATE")
-        txn.set("confidence", str(rec.get("_avg_confidence", "")))
-
-        claim_el = ET.SubElement(txn, "Claim")
-        for schema_field, field_data in rec.items():
-            if schema_field.startswith("_"):
-                continue
-            xml_tag = _DC_XML_MAP.get(schema_field, schema_field.replace(" ", ""))
-            el = ET.SubElement(claim_el, xml_tag)
-            el.text = str(field_data.get("value", ""))
-            if field_data.get("edited"):
-                el.set("edited", "true")
-                el.set("originalValue", str(field_data.get("original", "")))
-            el.set("confidence", str(field_data.get("confidence", "")))
-
-    xml_str = ET.tostring(root, encoding="unicode")
-    pretty  = minidom.parseString(xml_str).toprettyxml(indent="  ")
-    lines = pretty.split("\n")
-    return "\n".join(lines[1:]) if lines[0].startswith("<?xml") else pretty
-
-
-def to_duck_creek_json(mapped_records: list, sheet_meta: dict) -> dict:
-    transactions = []
-    for rec in mapped_records:
-        claim_obj = {}
-        for schema_field, field_data in rec.items():
-            if schema_field.startswith("_"):
-                continue
-            claim_obj[schema_field] = {
-                "value":      field_data.get("value", ""),
-                "confidence": field_data.get("confidence", 0),
-                "edited":     field_data.get("edited", False),
-            }
-            if field_data.get("edited"):
-                claim_obj[schema_field]["originalValue"] = field_data.get("original", "")
-
-        transactions.append({
-            "transactionType":  "UPDATE",
-            "avgConfidence":    rec.get("_avg_confidence", 0),
-            "claim":            claim_obj,
-        })
-
-    return {
-        "schema":        "DuckCreek.Claims.Transaction.v6",
-        "exportDate":    datetime.datetime.now().isoformat(),
-        "source":        "TPA_Claims_Review_Portal",
-        "sheetName":     sheet_meta.get("sheet_name", ""),
-        "recordCount":   len(transactions),
-        "transactions":  transactions,
-    }
-
-
-def to_guidewire_json(mapped_records: list, sheet_meta: dict) -> dict:
-    _GW_FIELD_MAP = {
-        "Claim Number":        "claimNumber",
-        "Claimant Name":       "claimantName",
-        "Loss Date":           "lossDate",
-        "Date Reported":       "reportedDate",
-        "Total Incurred":      "totalIncurredAmount",
-        "Total Paid":          "totalPaidAmount",
-        "Reserve":             "reserveAmount",
-        "Indemnity Paid":      "indemnityPaidAmount",
-        "Medical Paid":        "medicalPaidAmount",
-        "Expense Paid":        "expensePaidAmount",
-        "Status":              "status",
-        "Line of Business":    "lineOfBusinessCode",
-        "Policy Number":       "policyNumber",
-        "Policy Period Start": "policyPeriodStart",
-        "Policy Period End":   "policyPeriodEnd",
-        "Carrier":             "carrierName",
-        "Insured Name":        "insuredName",
-        "Description of Loss": "lossDescription",
-        "Cause of Loss":       "causeOfLoss",
-        "Litigation Flag":     "litigationFlag",
-        "Adjuster Name":       "adjusterName",
-        "Adjuster Phone":      "adjusterPhone",
-        "Branch Code":         "branchCode",
-        "Department Code":     "departmentCode",
-        "Coverage Type":       "coverageType",
-        "Deductible":          "deductibleAmount",
-        "Subrogation Amount":  "subrogationAmount",
-        "Recovery Amount":     "recoveryAmount",
-        "Open/Closed":         "openClosedStatus",
-        "Reopen Date":         "reopenDate",
-        "Last Activity Date":  "lastActivityDate",
-        "Notes":               "notes",
-    }
-
-    claims = []
-    for rec in mapped_records:
-        claim_obj = {
-            "_type":          "cc.Claim",
-            "_confidence":    rec.get("_avg_confidence", 0),
-        }
-        financials  = {}
-        has_finance = False
-        for schema_field, field_data in rec.items():
-            if schema_field.startswith("_"):
-                continue
-            gw_key = _GW_FIELD_MAP.get(schema_field, schema_field[0].lower() + schema_field[1:].replace(" ", ""))
-            val    = field_data.get("value", "")
-
-            if any(x in schema_field.lower() for x in ["paid", "reserve", "incurred", "deductible", "recovery", "subrogation"]):
-                financials[gw_key] = {
-                    "amount":     val,
-                    "currency":   "USD",
-                    "confidence": field_data.get("confidence", 0),
-                }
-                if field_data.get("edited"):
-                    financials[gw_key]["originalValue"] = field_data.get("original", "")
-                has_finance = True
-            else:
-                claim_obj[gw_key] = {
-                    "value":      val,
-                    "confidence": field_data.get("confidence", 0),
-                }
-                if field_data.get("edited"):
-                    claim_obj[gw_key]["originalValue"] = field_data.get("original", "")
-
-        if has_finance:
-            claim_obj["financials"] = financials
-        claims.append(claim_obj)
-
-    return {
-        "schema":         "Guidewire.ClaimCenter.REST.v1",
-        "exportDate":     datetime.datetime.now().isoformat(),
-        "source":         "TPA_Claims_Review_Portal",
-        "sheetName":      sheet_meta.get("sheet_name", ""),
-        "recordCount":    len(claims),
-        "data": {
-            "claims": claims,
-        },
-    }
-
-
-def build_mapped_records_for_export(data: list, schema_name: str,
-                                     selected_sheet: str) -> list:
-    records = []
-    schema  = SCHEMAS[schema_name]
-    custom_flds = st.session_state.get(f"custom_fields_{schema_name}", [])
-    export_flds = list(schema["required_fields"]) + [
-        f for f in custom_flds if f not in schema["required_fields"]
-    ]
-
-    for i, row in enumerate(data):
-        c_id   = detect_claim_id(row, i)
-        mapped = map_claim_to_schema(row, schema_name)
-        rec    = {}
-        confs  = []
-
-        for sf in export_flds:
-            if sf not in mapped:
-                rec[sf] = {"value": "", "confidence": 0, "edited": False, "original": ""}
-                confs.append(0)
-                continue
-            m        = mapped[sf]
-            excel_f  = m["excel_field"]
-            mk_key   = f"mod_{selected_sheet}_{c_id}_schema_{sf}"
-            live_val = st.session_state.get(mk_key, None)
-            orig     = m["info"].get("value", "")
-            final    = live_val if live_val is not None else m["value"]
-            rec[sf]  = {
-                "value":      final,
-                "original":   orig,
-                "edited":     final != orig,
-                "confidence": m["confidence"],
-                "excel_row":  m["info"].get("excel_row"),
-                "excel_col":  m["info"].get("excel_col"),
-            }
-            confs.append(m["confidence"])
-
-        rec["_avg_confidence"] = round(sum(confs) / len(confs)) if confs else 0
-        rec["_claim_id"]       = c_id
-        records.append(rec)
-    return records
-
-
 def to_standard_json(export_data: dict, sheet_meta: dict, totals: dict, merged_meta: dict) -> dict:
+    """
+    Build a sequential JSON that mirrors the physical order in the Excel sheet:
+      1. Title / header merged regions (sorted by excel_row ascending)
+      2. Data records (in their original row order)
+      3. Totals row(s) at the end
+    """
+    # --- 1. Titles section: sort merged regions by row then col ---
     titles_section = []
     sorted_merges = sorted(
         [(k, v) for k, v in merged_meta.items() if v.get("value")],
@@ -1943,7 +976,7 @@ def to_standard_json(export_data: dict, sheet_meta: dict, totals: dict, merged_m
     )
     for key, m in sorted_merges:
         titles_section.append({
-            "type":      m["type"],
+            "type":      m["type"],          # TITLE / HEADER / DATA
             "value":     m["value"],
             "excel_row": m["excel_row"],
             "excel_col": m["excel_col"],
@@ -1951,8 +984,10 @@ def to_standard_json(export_data: dict, sheet_meta: dict, totals: dict, merged_m
             "span_rows": m["span_rows"],
         })
 
-    records_section = export_data
+    # --- 2. Records section ---
+    records_section = export_data   # already an ordered dict keyed by claim id
 
+    # --- 3. Totals section ---
     totals_section = {}
     if totals:
         totals_section = {
@@ -1967,6 +1002,7 @@ def to_standard_json(export_data: dict, sheet_meta: dict, totals: dict, merged_m
             "sheet_name":    sheet_meta.get("sheet_name"),
             "record_count":  sheet_meta.get("record_count"),
         },
+        # Sequential sections mirror Excel top-to-bottom layout
         "titleRows":    titles_section,
         "records":      records_section,
         "totals":       totals_section,
@@ -2028,45 +1064,9 @@ def save_feature_store(sheet_name: str, data: dict) -> str:
 # ==============================
 # MAIN APP
 # ==============================
-
-for _k, _v in [
-    ("conf_threshold", 80),
-    ("active_schema",  None),
-    ("schema_popup_target", None),
-    ("schema_popup_tab",    "required"),
-    ("settings_saved", False),
-]:
-    if _k not in st.session_state:
-        st.session_state[_k] = _v
-
-col_title, col_gear, col_sheet_dropdown = st.columns([3.5, 0.5, 1])
+col_title, col_sheet_dropdown = st.columns([4, 1])
 with col_title:
-    active_schema = st.session_state.get("active_schema", None)
-    badge_html = ""
-    if active_schema and active_schema in SCHEMAS:
-        sc = SCHEMAS[active_schema]
-        badge_html = (
-            f'<span class="schema-badge schema-badge-{sc["css_cls"]}" '
-            f'style="border-color:{sc["color"]};color:{sc["color"]};background:#1c2128;">'
-            f'{sc["icon"]} {active_schema} · {sc["version"]}'
-            f'</span>'
-        )
-    st.markdown(
-        f'<div class="main-title">🛡️ TPA Claims Review Portal{badge_html}</div>',
-        unsafe_allow_html=True
-    )
-
-with col_gear:
-    st.markdown("<div style='margin-top:14px;' class='settings-btn'>", unsafe_allow_html=True)
-    if st.button("⚙", key="open_settings", help="Open Settings", use_container_width=True):
-        show_settings_dialog()
-    st.markdown("</div>", unsafe_allow_html=True)
-
-if st.session_state.get("schema_popup_target"):
-    _target = st.session_state["schema_popup_target"]
-    st.session_state["schema_popup_target"] = None
-    show_schema_fields_dialog(_target)
-
+    st.markdown('<div class="main-title">🛡️ TPA Claims Review Portal</div>', unsafe_allow_html=True)
 
 uploaded = st.file_uploader("Upload Loss Run Excel/CSV", type=["xlsx", "csv"])
 
@@ -2113,30 +1113,28 @@ if uploaded:
                     for key in ("value", "modified"):
                         if key in inf and isinstance(inf[key], str):
                             inf[key] = normalize_str(inf[key])
-            _title_flds = extract_title_fields(merged_meta)
             st.session_state.sheet_cache[selected_sheet] = {
                 "data":        data,
                 "merged_meta": merged_meta,
                 "totals":      totals_data,
-                "title_fields": _title_flds,
             }
             st.session_state.selected_idx = 0
             st.session_state.focus_field  = None
 
-    active       = st.session_state.sheet_cache[selected_sheet]
-    data         = active["data"]
-    merged_meta  = active.get("merged_meta", {})
-    totals_data  = active.get("totals", {})
-    title_fields = active.get("title_fields", {})
+    active      = st.session_state.sheet_cache[selected_sheet]
+    data        = active["data"]
+    merged_meta = active.get("merged_meta", {})
+    totals_data = active.get("totals", {})
 
     if st.session_state.selected_idx >= len(data):
         st.session_state.selected_idx = 0
 
     curr_claim = data[st.session_state.selected_idx]
 
+    # ── THREE COLUMN LAYOUT: nav | main | format panel ──
     col_nav, col_main, col_fmt = st.columns([1.2, 3.2, 1.4], gap="large")
 
-    # ── LEFT PANEL ──────────────────────────────────────────────────────
+    # ── LEFT PANEL ─────────────────────────────────────────────────────
     with col_nav:
         with st.container(height=700, border=False):
             st.markdown("<p style='color:#8b949e; font-weight:bold; font-size:12px; text-transform:uppercase;'>TPA Records</p>", unsafe_allow_html=True)
@@ -2158,9 +1156,10 @@ if uploaded:
                     st.session_state.focus_field  = None
                     st.rerun()
 
-    # ── MIDDLE PANEL ────────────────────────────────────────────────────
+    # ── MIDDLE PANEL ───────────────────────────────────────────────────
     with col_main:
 
+        # ── SHEET TITLE BANNER (from merged cell metadata) ──
         sorted_titles = sorted(
             [(k, v) for k, v in merged_meta.items() if v.get("value")],
             key=lambda x: (x[1]["row_start"], x[1]["col_start"])
@@ -2202,6 +1201,7 @@ if uploaded:
 
         with head_right:
             st.markdown("<p style='color:#8b949e;font-weight:bold;font-size:12px;text-transform:uppercase;text-align:right;'>Export Selection</p>", unsafe_allow_html=True)
+            # Right-aligned equal-size buttons
             st.markdown("""
                 <div class="export-sel-btn" style="display:flex;justify-content:flex-end;gap:6px;margin-top:2px;">
             """, unsafe_allow_html=True)
@@ -2220,6 +1220,7 @@ if uploaded:
 
         st.markdown("<hr style='border-color:#30363d;margin-top:8px;'>", unsafe_allow_html=True)
 
+        # Merged cells info banner
         if merged_meta:
             titles  = [v for v in merged_meta.values() if v["type"] == "TITLE" and v["value"]]
             headers = [v for v in merged_meta.values() if v["type"] == "HEADER" and v["value"]]
@@ -2232,277 +1233,83 @@ if uploaded:
                 merge_html += "</div>"
                 st.markdown(merge_html, unsafe_allow_html=True)
 
-        _active_schema = st.session_state.get("active_schema", None)
-        _conf_thresh   = st.session_state.get("conf_threshold", 80)
+        hc = st.columns([2, 2.6, 2.6, 0.6, 0.6, 0.5])
+        with hc[0]: st.markdown("**FIELD**")
+        with hc[1]: st.markdown("**EXTRACTED VALUE**")
+        with hc[2]: st.markdown("**MODIFIED VALUE**")
 
-        if _active_schema and _active_schema in SCHEMAS:
-            # ── SCHEMA MODE ──
-            _schema_def  = SCHEMAS[_active_schema]
-            _mapped      = map_claim_to_schema(curr_claim, _active_schema, title_fields)
-            _custom_flds = st.session_state.get(f"custom_fields_{_active_schema}", [])
+        for field, info in curr_claim.items():
+            ek = f"edit_{selected_sheet}_{curr_claim_id}_{field}"
+            xk = f"chk_{selected_sheet}_{curr_claim_id}_{field}"
+            mk = f"mod_{selected_sheet}_{curr_claim_id}_{field}"
 
-            _display_fields = list(_schema_def["required_fields"]) + [
-                f for f in _custom_flds if f not in _schema_def["required_fields"]
-            ]
+            if ek not in st.session_state: st.session_state[ek] = False
+            if xk not in st.session_state: st.session_state[xk] = True
+            if mk not in st.session_state: st.session_state[mk] = info.get("modified", info["value"])
 
-            _low_conf = [
-                sf for sf in _display_fields
-                if sf in _mapped and _mapped[sf]["confidence"] < _conf_thresh
-            ]
-            _missing  = [sf for sf in _schema_def["required_fields"] if sf not in _mapped]
+            cl, co, cm, ce, cb, cx = st.columns([2, 2.6, 2.6, 0.9, 0.9, 0.5], gap="small")
 
-            if _missing:
+            with cl:
+                _current_val = st.session_state.get(mk, info.get("modified", info["value"]))
+                _is_edited   = _current_val != info["value"]
+                _edit_dot    = "<span style='color:#d29922;margin-left:4px;font-size:8px;'>●</span>" if _is_edited else ""
                 st.markdown(
-                    f"<div style=\"background:#2d1515;border:1px solid #f85149;border-radius:6px;"
-                    f"padding:8px 12px;margin-bottom:8px;font-size:12px;color:#f85149;\">"
-                    f"⚠ {len(_missing)} required field(s) could not be mapped from this sheet: "
-                    f"{', '.join(_missing)}</div>",
-                    unsafe_allow_html=True
-                )
-            if _low_conf:
-                st.markdown(
-                    f"<div style=\"background:#2d2208;border:1px solid #d29922;border-radius:6px;"
-                    f"padding:8px 12px;margin-bottom:8px;font-size:12px;color:#d29922;\">"
-                    f"⚡ {len(_low_conf)} field(s) below confidence threshold ({_conf_thresh}%): "
-                    f"{', '.join(_low_conf)}</div>",
-                    unsafe_allow_html=True
-                )
+                    f"<div style='height:40px;display:flex;align-items:center;"
+                    f"color:#c9d1d9;font-size:12px;font-weight:bold;text-transform:uppercase;'>"
+                    f"{field}{_edit_dot}</div>", unsafe_allow_html=True)
 
-            hc = st.columns([1.8, 1.5, 1.8, 1.8, 0.55, 0.55, 0.45])
-            with hc[0]: st.markdown("**SCHEMA FIELD**")
-            with hc[1]: st.markdown("**CONF**")
-            with hc[2]: st.markdown("**EXTRACTED VALUE**")
-            with hc[3]: st.markdown("**MODIFIED VALUE**")
+            with co:
+                st.text_input("o", value=info["value"],
+                              key=f"orig_{selected_sheet}_{curr_claim_id}_{field}",
+                              label_visibility="collapsed", disabled=True)
 
-            for schema_field in _display_fields:
-                if schema_field not in _mapped:
-                    is_req = schema_field in _schema_def["required_fields"]
-                    st.markdown(
-                        f"<div style=\"display:flex;align-items:center;gap:8px;"
-                        f"background:#1a0e0e;border:1px solid #f85149;border-radius:6px;"
-                        f"padding:6px 10px;margin:2px 0;\">"
-                        f"<span style=\"color:#f85149;font-size:12px;font-weight:bold;text-transform:uppercase;\">"
-                        f"{schema_field}</span>"
-                        f"<span style=\"background:#f85149;color:white;font-size:9px;border-radius:4px;padding:1px 5px;\">"
-                        f"{'REQUIRED' if is_req else 'OPTIONAL'} · NOT FOUND</span>"
-                        f"</div>",
-                        unsafe_allow_html=True
-                    )
-                    continue
-
-                m        = _mapped[schema_field]
-                conf     = m["confidence"]
-                excel_f  = m["excel_field"]
-                info     = m["info"]
-                is_req   = m["is_required"]
-                # Flag whether this field came from a title row (virtual key)
-                is_title_sourced = m.get("from_title", False)
-
-                if conf < _conf_thresh:
-                    conf_col   = "#f85149"
-                    row_border = "#f85149"
-                    row_bg     = "#1f0d0d"
-                elif conf < 75:
-                    conf_col   = "#f0883e"
-                    row_border = "#f0883e"
-                    row_bg     = "#1f1508"
-                elif conf < 88:
-                    conf_col   = "#d29922"
-                    row_border = "#30363d"
-                    row_bg     = "#161b22"
+            with cm:
+                if st.session_state[ek]:
+                    # Use a form so pressing Enter ALWAYS triggers submission,
+                    # even if the value hasn't changed
+                    with st.form(key=f"form_{selected_sheet}_{curr_claim_id}_{field}", border=False):
+                        nv = st.text_input(
+                            "m", value=st.session_state.get(mk, info.get("modified", info["value"])),
+                            label_visibility="collapsed"
+                        )
+                        submitted = st.form_submit_button("", use_container_width=False)
+                        if submitted:
+                            st.session_state[mk] = nv
+                            st.session_state.sheet_cache[selected_sheet]["data"][
+                                st.session_state.selected_idx][field]["modified"] = nv
+                            st.session_state[ek] = False
+                            st.rerun()
                 else:
-                    conf_col   = "#3fb950"
-                    row_border = "#30363d"
-                    row_bg     = "#161b22"
-
-                ek = f"edit_{selected_sheet}_{curr_claim_id}_schema_{schema_field}"
-                mk = f"mod_{selected_sheet}_{curr_claim_id}_schema_{schema_field}"
-                xk = f"chk_{selected_sheet}_{curr_claim_id}_schema_{schema_field}"
-
-                if ek not in st.session_state: st.session_state[ek] = False
-                if xk not in st.session_state: st.session_state[xk] = True
-                if mk not in st.session_state: st.session_state[mk] = info.get("modified", info["value"])
-
-                st.markdown(
-                    f"<div style=\"border-left:3px solid {row_border};background:{row_bg};"
-                    f"border-radius:0 4px 4px 0;padding:2px 0 2px 4px;margin:1px 0;\"></div>",
-                    unsafe_allow_html=True
-                )
-
-                cl, cc, co, cm, ce, cb, cx = st.columns([1.8, 1.5, 1.8, 1.8, 0.55, 0.55, 0.45], gap="small")
-
-                with cl:
-                    _cur_val  = st.session_state.get(mk, info.get("modified", info["value"]))
-                    _edited   = _cur_val != info["value"]
-                    _dot      = "<span style=\"color:#d29922;font-size:8px;\">●</span> " if _edited else ""
-                    _req_tag  = (
-                        f"<span style=\"background:#1c2128;border:1px solid {conf_col};"
-                        f"border-radius:3px;font-size:9px;color:{conf_col};"
-                        f"padding:0 4px;margin-left:4px;\">"
-                        f"{'REQ' if is_req else 'OPT'}</span>"
+                    nv = st.text_input(
+                        "m", key=mk, label_visibility="collapsed",
+                        disabled=True
                     )
-                    _from_title  = m.get("from_title", False)
-                    _src_label   = (
-                        "<span style=\"color:#d29922;font-size:9px;\">📌 from title row</span>"
-                        if _from_title else
-                        f"<span style=\"font-size:9px;color:#8b949e;\">← {excel_f}</span>"
-                    )
+                # Always keep data store in sync
+                st.session_state.sheet_cache[selected_sheet]["data"][
+                    st.session_state.selected_idx][field]["modified"] = st.session_state.get(mk, info.get("modified", info["value"]))
+
+            with ce:
+                if st.button("👁", key=f"eye_{selected_sheet}_{curr_claim_id}_{field}",
+                             use_container_width=True):
+                    show_eye_popup(field, info, excel_path, selected_sheet)
+
+            with cb:
+                if not st.session_state[ek]:
+                    if st.button("✏", key=f"ed_{selected_sheet}_{curr_claim_id}_{field}",
+                                 use_container_width=True, help="Edit field"):
+                        st.session_state[ek] = True
+                        st.rerun()
+                else:
                     st.markdown(
-                        f"<div style=\"min-height:40px;display:flex;flex-direction:column;"
-                        f"justify-content:center;color:#c9d1d9;font-size:11px;font-weight:bold;"
-                        f"text-transform:uppercase;\">"
-                        f"{_dot}{schema_field}{_req_tag}"
-                        f"<div style=\"font-weight:normal;text-transform:none;margin-top:1px;\">{_src_label}</div>"
-                        f"</div>",
+                        "<div style='height:38px;display:flex;align-items:center;"
+                        "justify-content:center;color:#3fb950;font-size:11px;"
+                        "border:1px solid #30363d;border-radius:6px;'>↵</div>",
                         unsafe_allow_html=True
                     )
 
-                with cc:
-                    st.markdown(
-                        f"<div style=\"min-height:40px;display:flex;flex-direction:column;"
-                        f"justify-content:center;gap:3px;\">"
-                        f"<span style=\"background:{conf_col}22;border:1px solid {conf_col};"
-                        f"border-radius:10px;padding:2px 8px;font-size:12px;"
-                        f"color:{conf_col};font-weight:bold;\">{conf}%</span>"
-                        f"<div style=\"background:#21262d;border-radius:3px;height:4px;width:80%;\">"
-                        f"<div style=\"background:{conf_col};height:4px;border-radius:3px;"
-                        f"width:{conf}%;\"></div></div>"
-                        f"<span style=\"font-size:9px;color:#8b949e;\">"
-                        f"H:{m['header_score']}% V:{m['value_score']}%</span>"
-                        f"</div>",
-                        unsafe_allow_html=True
-                    )
-
-                with co:
-                    st.text_input("o", value=info["value"],
-                                  key=f"orig_{selected_sheet}_{curr_claim_id}_schema_{schema_field}",
-                                  label_visibility="collapsed", disabled=True)
-
-                with cm:
-                    if st.session_state[ek]:
-                        with st.form(key=f"form_s_{selected_sheet}_{curr_claim_id}_{schema_field}", border=False):
-                            nv = st.text_input(
-                                "m", value=st.session_state.get(mk, info.get("modified", info["value"])),
-                                label_visibility="collapsed"
-                            )
-                            submitted = st.form_submit_button("", use_container_width=False)
-                            if submitted:
-                                st.session_state[mk] = nv
-                                # ── FIX: only write back to claim dict if the
-                                #    excel_field actually exists (title-sourced
-                                #    fields use virtual keys like "[title row 1]"
-                                #    which are NOT keys in the claim row dict) ──
-                                if not is_title_sourced and excel_f in st.session_state.sheet_cache[selected_sheet]["data"][st.session_state.selected_idx]:
-                                    st.session_state.sheet_cache[selected_sheet]["data"][
-                                        st.session_state.selected_idx][excel_f]["modified"] = nv
-                                st.session_state[ek] = False
-                                st.rerun()
-                    else:
-                        nv = st.text_input("m", key=mk, label_visibility="collapsed", disabled=True)
-
-                    # ── FIX: guard the writeback — skip for title-sourced fields ──
-                    if not is_title_sourced and excel_f in st.session_state.sheet_cache[selected_sheet]["data"][st.session_state.selected_idx]:
-                        st.session_state.sheet_cache[selected_sheet]["data"][
-                            st.session_state.selected_idx][excel_f]["modified"] = st.session_state.get(
-                            mk, info.get("modified", info["value"]))
-
-                with ce:
-                    if st.button("👁", key=f"eye_s_{selected_sheet}_{curr_claim_id}_{schema_field}",
-                                 use_container_width=True):
-                        show_eye_popup(schema_field, info, excel_path, selected_sheet)
-
-                with cb:
-                    if not st.session_state[ek]:
-                        if st.button("✏", key=f"ed_s_{selected_sheet}_{curr_claim_id}_{schema_field}",
-                                     use_container_width=True, help="Edit field"):
-                            st.session_state[ek] = True
-                            st.rerun()
-                    else:
-                        st.markdown(
-                            "<div style=\"height:38px;display:flex;align-items:center;"
-                            "justify-content:center;color:#3fb950;font-size:11px;"
-                            "border:1px solid #30363d;border-radius:6px;\">↵</div>",
-                            unsafe_allow_html=True
-                        )
-
-                with cx:
-                    st.markdown("<div style=\"height:8px;\"></div>", unsafe_allow_html=True)
-                    st.checkbox("", key=xk, label_visibility="collapsed")
-
-        else:
-            # ── PLAIN MODE ──
-            hc = st.columns([2, 2.6, 2.6, 0.6, 0.6, 0.5])
-            with hc[0]: st.markdown("**FIELD**")
-            with hc[1]: st.markdown("**EXTRACTED VALUE**")
-            with hc[2]: st.markdown("**MODIFIED VALUE**")
-
-            for field, info in curr_claim.items():
-                ek = f"edit_{selected_sheet}_{curr_claim_id}_{field}"
-                xk = f"chk_{selected_sheet}_{curr_claim_id}_{field}"
-                mk = f"mod_{selected_sheet}_{curr_claim_id}_{field}"
-
-                if ek not in st.session_state: st.session_state[ek] = False
-                if xk not in st.session_state: st.session_state[xk] = True
-                if mk not in st.session_state: st.session_state[mk] = info.get("modified", info["value"])
-
-                cl, co, cm, ce, cb, cx = st.columns([2, 2.6, 2.6, 0.9, 0.9, 0.5], gap="small")
-
-                with cl:
-                    _current_val = st.session_state.get(mk, info.get("modified", info["value"]))
-                    _is_edited   = _current_val != info["value"]
-                    _edit_dot    = "<span style=\"color:#d29922;margin-left:4px;font-size:8px;\">●</span>" if _is_edited else ""
-                    st.markdown(
-                        f"<div style=\"height:40px;display:flex;align-items:center;"
-                        f"color:#c9d1d9;font-size:12px;font-weight:bold;text-transform:uppercase;\">"
-                        f"{field}{_edit_dot}</div>", unsafe_allow_html=True)
-
-                with co:
-                    st.text_input("o", value=info["value"],
-                                  key=f"orig_{selected_sheet}_{curr_claim_id}_{field}",
-                                  label_visibility="collapsed", disabled=True)
-
-                with cm:
-                    if st.session_state[ek]:
-                        with st.form(key=f"form_{selected_sheet}_{curr_claim_id}_{field}", border=False):
-                            nv = st.text_input(
-                                "m", value=st.session_state.get(mk, info.get("modified", info["value"])),
-                                label_visibility="collapsed"
-                            )
-                            submitted = st.form_submit_button("", use_container_width=False)
-                            if submitted:
-                                st.session_state[mk] = nv
-                                st.session_state.sheet_cache[selected_sheet]["data"][
-                                    st.session_state.selected_idx][field]["modified"] = nv
-                                st.session_state[ek] = False
-                                st.rerun()
-                    else:
-                        nv = st.text_input("m", key=mk, label_visibility="collapsed", disabled=True)
-                    st.session_state.sheet_cache[selected_sheet]["data"][
-                        st.session_state.selected_idx][field]["modified"] = st.session_state.get(
-                        mk, info.get("modified", info["value"]))
-
-                with ce:
-                    if st.button("👁", key=f"eye_{selected_sheet}_{curr_claim_id}_{field}",
-                                 use_container_width=True):
-                        show_eye_popup(field, info, excel_path, selected_sheet)
-
-                with cb:
-                    if not st.session_state[ek]:
-                        if st.button("✏", key=f"ed_{selected_sheet}_{curr_claim_id}_{field}",
-                                     use_container_width=True, help="Edit field"):
-                            st.session_state[ek] = True
-                            st.rerun()
-                    else:
-                        st.markdown(
-                            "<div style=\"height:38px;display:flex;align-items:center;"
-                            "justify-content:center;color:#3fb950;font-size:11px;"
-                            "border:1px solid #30363d;border-radius:6px;\">↵</div>",
-                            unsafe_allow_html=True
-                        )
-
-                with cx:
-                    st.markdown("<div style=\"height:8px;\"></div>", unsafe_allow_html=True)
-                    st.checkbox("", key=xk, label_visibility="collapsed")
+            with cx:
+                st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+                st.checkbox("", key=xk, label_visibility="collapsed")
 
         # Totals section
         if totals_data:
@@ -2519,40 +1326,11 @@ if uploaded:
                             <div style="font-size:16px;font-weight:bold;color:#3fb950;">{v:,.2f}</div>
                         </div>""", unsafe_allow_html=True)
 
-    # ── RIGHT PANEL ──────────────────────────────────────────────────────
+    # ── RIGHT PANEL — FORMAT SELECTOR (Standard JSON only) ─────────────
     with col_fmt:
         st.markdown("<p style='color:#8b949e;font-weight:bold;font-size:12px;text-transform:uppercase;'>Export Format</p>", unsafe_allow_html=True)
 
-        _active = st.session_state.get("active_schema", None)
-        if _active and _active in SCHEMAS:
-            _sc = SCHEMAS[_active]
-            _cf_count = len(st.session_state.get(f"custom_fields_{_active}", []))
-            st.markdown(
-                f"""<div style='background:#1c2128;border:1px solid {_sc['color']};
-border-radius:8px;padding:10px 12px;margin-bottom:8px;'>
-    <div style='font-size:13px;font-weight:bold;color:{_sc['color']};'>{_sc['icon']} {_active} Active</div>
-    <div style='font-size:11px;color:#8b949e;margin-top:3px;'>{_sc['version']}</div>
-    <div style='font-size:11px;color:#8b949e;margin-top:2px;'>
-        Required: {len(_sc['required_fields'])} fields &nbsp;|&nbsp; Custom: {_cf_count}
-    </div>
-</div>""",
-                unsafe_allow_html=True
-            )
-
-        _conf = st.session_state.get("conf_threshold", 80)
-        _bar_col = "#3fb950" if _conf >= 70 else "#d29922" if _conf >= 40 else "#f85149"
-        st.markdown(
-            f"<div style='margin-bottom:10px;'>"
-            f"<div style='font-size:10px;color:#8b949e;text-transform:uppercase;font-weight:bold;margin-bottom:3px;'>Confidence Threshold</div>"
-            f"<div style='display:flex;align-items:center;gap:8px;'>"
-            f"<div class='conf-bar-wrap' style='flex:1;'>"
-            f"<div class='conf-bar-fill' style='width:{_conf}%;background:{_bar_col};'></div>"
-            f"</div>"
-            f"<span style='color:{_bar_col};font-size:12px;font-weight:bold;'>{_conf}%</span>"
-            f"</div></div>",
-            unsafe_allow_html=True
-        )
-
+        # Only Standard JSON — show as a static selected card
         st.markdown(f"""
             <div style="background:#1c2128;border:1px solid #58a6ff;border-radius:8px;
                         padding:10px 12px;margin-bottom:4px;">
@@ -2562,6 +1340,7 @@ border-radius:8px;padding:10px 12px;margin-bottom:8px;'>
 
         st.markdown("<hr style='border-color:#30363d;margin-top:12px;'>", unsafe_allow_html=True)
 
+        # Merged cells panel
         if merged_meta:
             st.markdown("<p style='color:#8b949e;font-weight:bold;font-size:11px;text-transform:uppercase;margin-top:12px;'>Merged Regions</p>", unsafe_allow_html=True)
             sorted_merges = sorted(
@@ -2579,147 +1358,56 @@ border-radius:8px;padding:10px 12px;margin-bottom:8px;'>
 
         st.markdown("<hr style='border-color:#30363d;margin-top:8px;'>", unsafe_allow_html=True)
 
-        _exp_schema = st.session_state.get("active_schema", None)
-        _sheet_meta = {"sheet_name": selected_sheet, "record_count": len(data)}
+        # Export button
+        if st.button("⬇ Export as Standard JSON", type="primary", use_container_width=True, key=f"export_{selected_sheet}"):
+            export_data = {}
+            for i, row in enumerate(data):
+                c_id = detect_claim_id(row, i)
+                rec  = {}
+                for fld, inf in row.items():
+                    if st.session_state.get(f"chk_{selected_sheet}_{c_id}_{fld}", True):
+                        mk_key   = f"mod_{selected_sheet}_{c_id}_{fld}"
+                        live_val = st.session_state.get(mk_key, None)
+                        orig     = inf.get("value", "")
+                        stored   = inf.get("modified", orig)
+                        final_val = live_val if live_val is not None else stored
+                        rec[fld] = {
+                            "value":        final_val,
+                            "original":     orig,
+                            "edited":       final_val != orig,
+                            "excel_row":    inf.get("excel_row"),
+                            "excel_col":    inf.get("excel_col"),
+                            "record_index": i,
+                        }
+                export_data[c_id] = clean_duplicate_fields(rec)
 
-        def _sanitize_for_json(obj):
-            if isinstance(obj, dict):
-                return {k: _sanitize_for_json(v) for k, v in obj.items()}
-            if isinstance(obj, list):
-                return [_sanitize_for_json(i) for i in obj]
-            if isinstance(obj, str):
-                return normalize_str(obj)
-            return obj
+            sheet_meta = {
+                "sheet_name":    selected_sheet,
+                "record_count":  len(data),
+                "merged_regions": merged_meta,
+            }
 
-        st.markdown(
-            "<div style='font-size:10px;color:#8b949e;text-transform:uppercase;"
-            "font-weight:bold;margin-bottom:4px;'>Standard</div>",
-            unsafe_allow_html=True
-        )
-        std_j, std_y = st.columns(2)
+            output = to_standard_json(export_data, sheet_meta, totals_data, merged_meta)
+            fname  = f"{selected_sheet}_validated.json"
 
-        with std_j:
-            if st.button("JSON", use_container_width=True, type="primary",
-                         key=f"export_std_json_{selected_sheet}"):
-                _std_export_data = {}
-                for i, row in enumerate(data):
-                    c_id = detect_claim_id(row, i)
-                    rec  = {}
-                    for fld, inf in row.items():
-                        if st.session_state.get(f"chk_{selected_sheet}_{c_id}_{fld}", True):
-                            mk_key    = f"mod_{selected_sheet}_{c_id}_{fld}"
-                            live_val  = st.session_state.get(mk_key, None)
-                            orig      = inf.get("value", "")
-                            final_val = live_val if live_val is not None else inf.get("modified", orig)
-                            rec[fld]  = {
-                                "value": final_val, "original": orig,
-                                "edited": final_val != orig,
-                                "excel_row": inf.get("excel_row"),
-                                "excel_col": inf.get("excel_col"),
-                                "record_index": i,
-                            }
-                    _std_export_data[c_id] = clean_duplicate_fields(rec)
-                output   = _sanitize_for_json(
-                    to_standard_json(_std_export_data, _sheet_meta, totals_data, merged_meta)
-                )
-                json_str = json.dumps(output, indent=2, ensure_ascii=False)
-                save_feature_store(selected_sheet, output)
-                st.success("✅ Ready!")
-                st.download_button(
-                    "📥 Download JSON", data=json_str,
-                    file_name=f"{selected_sheet}_standard.json",
-                    mime="application/json", use_container_width=True,
-                    key=f"dl_std_json_{selected_sheet}"
-                )
+            def _sanitize_for_json(obj):
+                if isinstance(obj, dict):
+                    return {k: _sanitize_for_json(v) for k, v in obj.items()}
+                if isinstance(obj, list):
+                    return [_sanitize_for_json(i) for i in obj]
+                if isinstance(obj, str):
+                    return normalize_str(obj)
+                return obj
+            output   = _sanitize_for_json(output)
+            json_str = json.dumps(output, indent=2, ensure_ascii=False)
+            saved    = save_feature_store(selected_sheet, output)
 
-        with std_y:
-            st.markdown(
-                "<div style=\"background:#161b22;border:1px solid #30363d;border-radius:6px;"
-                "padding:8px 10px;font-size:11px;color:#8b949e;text-align:center;\">"
-                "YAML available<br>as config only<br><span style=\"font-size:9px;\">see /config folder</span>"
-                "</div>",
-                unsafe_allow_html=True
-            )
-
-        if _exp_schema == "Duck Creek":
-            st.markdown(
-                "<div style='background:#1a1208;border:1px solid #f0883e;border-radius:6px;"
-                "padding:6px 10px;margin:8px 0 4px 0;font-size:11px;color:#f0883e;font-weight:bold;'>"
-                "🟠 Duck Creek</div>",
-                unsafe_allow_html=True
-            )
-            st.markdown(
-                "<div style='font-size:10px;color:#8b949e;text-transform:uppercase;"
-                "font-weight:bold;margin-bottom:4px;'>API submission (JSON / XML)</div>",
-                unsafe_allow_html=True
-            )
-            dc_j, dc_x = st.columns(2)
-            with dc_j:
-                if st.button("JSON", use_container_width=True,
-                             key=f"export_dc_json_{selected_sheet}"):
-                    recs     = build_mapped_records_for_export(data, "Duck Creek", selected_sheet)
-                    dc_json  = _sanitize_for_json(to_duck_creek_json(recs, _sheet_meta))
-                    json_str = json.dumps(dc_json, indent=2, ensure_ascii=False)
-                    save_feature_store(selected_sheet, dc_json)
-                    st.success("✅ Ready!")
-                    st.download_button(
-                        "📥 Download JSON", data=json_str,
-                        file_name=f"{selected_sheet}_DuckCreek.json",
-                        mime="application/json", use_container_width=True,
-                        key=f"dl_dc_json_{selected_sheet}"
-                    )
-            with dc_x:
-                if st.button("XML", use_container_width=True,
-                             key=f"export_dc_xml_{selected_sheet}"):
-                    recs    = build_mapped_records_for_export(data, "Duck Creek", selected_sheet)
-                    xml_out = to_duck_creek_xml(recs, _sheet_meta)
-                    save_feature_store(selected_sheet, {"format": "DuckCreek_XML", "count": len(recs)})
-                    st.success("✅ Ready!")
-                    st.download_button(
-                        "📥 Download XML", data=xml_out,
-                        file_name=f"{selected_sheet}_DuckCreek.xml",
-                        mime="application/xml", use_container_width=True,
-                        key=f"dl_dc_xml_{selected_sheet}"
-                    )
-
-            st.markdown(
-                "<div style=\"background:#161b22;border:1px solid #30363d;border-radius:6px;"
-                "padding:6px 10px;margin-top:6px;font-size:10px;color:#8b949e;\">"
-                "📁 Schema config: <code>config/duck_creek.yaml</code>"
-                "</div>",
-                unsafe_allow_html=True
-            )
-
-        elif _exp_schema == "Guidewire":
-            st.markdown(
-                "<div style='background:#0e1a2e;border:1px solid #58a6ff;border-radius:6px;"
-                "padding:6px 10px;margin:8px 0 4px 0;font-size:11px;color:#58a6ff;font-weight:bold;'>"
-                "🔵 Guidewire ClaimCenter</div>",
-                unsafe_allow_html=True
-            )
-            st.markdown(
-                "<div style='font-size:10px;color:#8b949e;text-transform:uppercase;"
-                "font-weight:bold;margin-bottom:4px;'>API submission (JSON)</div>",
-                unsafe_allow_html=True
-            )
-            if st.button("JSON", use_container_width=True, type="primary",
-                         key=f"export_gw_json_{selected_sheet}"):
-                recs     = build_mapped_records_for_export(data, "Guidewire", selected_sheet)
-                gw_json  = _sanitize_for_json(to_guidewire_json(recs, _sheet_meta))
-                json_str = json.dumps(gw_json, indent=2, ensure_ascii=False)
-                save_feature_store(selected_sheet, gw_json)
-                st.success("✅ Ready!")
-                st.download_button(
-                    "📥 Download JSON", data=json_str,
-                    file_name=f"{selected_sheet}_Guidewire_ClaimCenter.json",
-                    mime="application/json", use_container_width=True,
-                    key=f"dl_gw_json_{selected_sheet}"
-                )
-
-            st.markdown(
-                "<div style=\"background:#161b22;border:1px solid #30363d;border-radius:6px;"
-                "padding:6px 10px;margin-top:6px;font-size:10px;color:#8b949e;\">"
-                "📁 Schema config: <code>config/guidewire.yaml</code>"
-                "</div>",
-                unsafe_allow_html=True
+            st.success("✅ Standard JSON export ready!")
+            st.download_button(
+                f"📥 Download {fname}",
+                data=json_str,
+                file_name=fname,
+                mime="application/json",
+                use_container_width=True,
+                key=f"dl_{selected_sheet}_standard"
             )
