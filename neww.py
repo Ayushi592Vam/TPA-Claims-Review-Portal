@@ -6,7 +6,6 @@ import csv
 import datetime
 import re
 import base64
-import hashlib
 import openpyxl
 from openpyxl.utils import get_column_letter
 from PIL import Image, ImageDraw, ImageFont
@@ -23,7 +22,7 @@ os.makedirs(FEATURE_STORE_PATH, exist_ok=True)
 def _load_logo_b64() -> str:
     """
     Try several locations for the ValueMomentum logo PNG.
-    Falls back to the hardcoded base64 embedded at build time.
+    Returns a base64 string, or "" if not found.
     """
     candidates = [
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "valuemomentum_logo.png"),
@@ -34,10 +33,7 @@ def _load_logo_b64() -> str:
         if os.path.exists(path):
             with open(path, "rb") as f:
                 return base64.b64encode(f.read()).decode()
-    return _LOGO_B64_EMBEDDED
-
-# ── Logo embedded at build time — always available even without the PNG file ──
-_LOGO_B64_EMBEDDED = "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"
+    return ""
 
 _LOGO_B64 = _load_logo_b64()
 
@@ -489,6 +485,11 @@ def map_claim_to_schema(claim: dict, schema_name: str,
 def extract_title_fields(merged_meta: dict) -> dict:
     """
     Extract policy-level fields from merged title/header rows.
+
+    Handles all 5 real loss-run sheet formats:
+      - "Policy #: CGL-2021-00847"      (CGL / E&O)
+      - "Policy : WC-2022-55391"        (Workers Comp / Auto — space before colon)
+      - "Policy: CP-2020-31047"         (Commercial Property — plain colon)
     """
     found = {}
 
@@ -507,16 +508,25 @@ def extract_title_fields(merged_meta: dict) -> dict:
                     "source": "title_row", "excel_row": r, "excel_col": c,
                     "title_text": text}
 
+        # ── Policy Number ────────────────────────────────────────────────
+        # Matches all these variants (real sheet examples):
+        #   "Policy #: CGL-2021-00847"
+        #   "Policy : WC-2022-55391"   (WC / Auto — space then colon, no #)
+        #   "Policy: CP-2020-31047"    (Property — plain colon)
+        #   "Policy Number: XYZ-123"
+        #   "Policy No. XYZ-123"
         pol = re.search(
             r'Policy\s*(?:#|No\.?|Number)?\s*[:\-]\s*([A-Z0-9][A-Z0-9\-/\.]+)',
             text, re.IGNORECASE)
         if pol and "Policy Number" not in found:
             found["Policy Number"] = _info(pol.group(1).strip())
 
+        # ── Insured Name ─────────────────────────────────────────────────
         ins = re.search(r'Insured\s*[:\-]\s*([^\|;]+)', text, re.IGNORECASE)
         if ins and "Insured Name" not in found:
             found["Insured Name"] = _info(ins.group(1).strip())
 
+        # ── Carrier ──────────────────────────────────────────────────────
         carr = re.search(r'Carrier\s*[:\-]\s*([^\|;]+)', text, re.IGNORECASE)
         if carr:
             val = carr.group(1).strip()
@@ -525,6 +535,7 @@ def extract_title_fields(merged_meta: dict) -> dict:
             if "Carrier Name" not in found:
                 found["Carrier Name"] = _info(val)
 
+        # ── State / Jurisdiction (Workers Comp) ──────────────────────────
         state = re.search(r'State\s*[:\-]\s*([^\|;]+)', text, re.IGNORECASE)
         if state:
             val = state.group(1).strip()
@@ -535,6 +546,7 @@ def extract_title_fields(merged_meta: dict) -> dict:
             if "State Code" not in found:
                 found["State Code"] = _info(val)
 
+        # ── Policy Period ─────────────────────────────────────────────────
         period = re.search(
             r'Period\s*[:\-]?\s*'
             r'(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})'
@@ -549,15 +561,23 @@ def extract_title_fields(merged_meta: dict) -> dict:
                 if k not in found:
                     found[k] = _info(v)
 
+        # ── Retroactive Date (E&O) ────────────────────────────────────────
         retro = re.search(
             r'Retroactive\s+Date\s*[:\-]\s*([^\|;]+)', text, re.IGNORECASE)
         if retro and "Reopen Date" not in found:
             found["Reopen Date"] = _info(retro.group(1).strip())
 
+        # ── Line of Business (inferred from sheet title row 1) ───────────
+        # ── Line of Business ─────────────────────────────────────────────
+        # Ordered most-specific → least-specific to avoid false matches.
+        # Handles apostrophes (WORKERS'), abbreviations (WC, CGL, GL, E&O),
+        # alternate spellings, and common external file naming conventions.
         lob_map = [
+            # Workers Compensation — must come before General Liability
             (r"workers[\'\'\u2019\s\-]*compensation",        "Workers Compensation"),
             (r"workers[\s\-]*comp\b",                          "Workers Compensation"),
             (r"\bW\.?C\.?\b(?:\s+loss|\s+claim|\s+run)?",  "Workers Compensation"),
+            # Commercial lines
             (r"commercial\s+general\s+liability",               "Commercial General Liability"),
             (r"\bC\.?G\.?L\.?\b",                            "Commercial General Liability"),
             (r"commercial\s+auto(?:mobile|motive)?",             "Commercial Auto"),
@@ -566,6 +586,7 @@ def extract_title_fields(merged_meta: dict) -> dict:
             (r"commercial\s+real\s+estate",                     "Commercial Property"),
             (r"commercial\s+prop(?:erty)?",                      "Commercial Property"),
             (r"building\s+&\s+property",                        "Commercial Property"),
+            # Professional / Specialty
             (r"professional\s+liability",                        "Professional Liability"),
             (r"\bE\.?\s*&\s*O\.?\b",                        "Professional Liability"),
             (r"errors?\s+[&and]+\s+omissions?",                 "Professional Liability"),
@@ -576,6 +597,7 @@ def extract_title_fields(merged_meta: dict) -> dict:
             (r"inland\s+marine",                                 "Inland Marine"),
             (r"products?\s+liability",                           "Products Liability"),
             (r"crime|fidelity",                                   "Crime / Fidelity"),
+            # Broad / catch-all — must come last
             (r"\bumbrella\b",                                   "Umbrella"),
             (r"excess\s+liability",                              "Excess Liability"),
             (r"general\s+liability|\bG\.?L\.?\b",            "General Liability"),
@@ -733,6 +755,7 @@ def show_settings_dialog():
 
     if st.button("🔄 Reload YAML Configs", use_container_width=True, key="reload_yaml_cfg"):
         SCHEMAS = _load_all_configs(_HARDCODED_SCHEMAS)
+        # Clear sheet cache so title_fields are re-extracted with updated config
         st.session_state["sheet_cache"] = {}
         st.success("✅ Configs reloaded — sheet cache cleared")
         st.rerun()
@@ -881,7 +904,7 @@ def show_schema_fields_dialog(schema_name):
 # ==============================
 # PAGE CONFIG
 # ==============================
-st.set_page_config(layout="wide", page_title="Loss Run Parser")
+st.set_page_config(layout="wide", page_title="TPA Claims Review Portal")
 if "focus_field" not in st.session_state:
     st.session_state.focus_field = None
 
@@ -890,20 +913,11 @@ if "focus_field" not in st.session_state:
 # ==============================
 st.markdown("""
 <style>
-    /* ── Typography ── */
-    h1,h2,h3,h4,h5,h6,
-    .main-title, .mid-header-title, .sheet-title-value, .sheet-title-label,
-    .incurred-label, .incurred-amount,
-    [class*="heading"], [class*="-title"], [class*="-label"] {
-        font-family: "Segoe UI", "Segoe UI Variable", Arial, sans-serif !important;
-    }
-
     .stApp { background-color: #0d1117; color: #c9d1d9; }
     .main-title {
         font-size: 26px; font-weight: 600; padding: 10px 0;
         border-bottom: 1px solid #30363d; margin-bottom: 20px; color: white;
         text-shadow: 0 0 10px rgba(88,166,255,0.7);
-        font-family: "Segoe UI", Arial, sans-serif !important;
     }
     .sheet-title-banner {
         background: #161b22;
@@ -979,6 +993,7 @@ st.markdown("""
         border-color:#58a6ff!important;color:#58a6ff!important;
         background:#1c2128!important;box-shadow:0 0 8px rgba(88,166,255,0.4)!important;
     }
+    /* ── Mandatory asterisk badge  (NO circle, just * ) ─────────── */
     .mandatory-asterisk {
         display: inline-block;
         font-size: 13px;
@@ -1739,64 +1754,9 @@ def clean_duplicate_fields(record: dict) -> dict:
     return out
 
 
-# ── Audit / Feature Store helpers ────────────────────────────────────────
-AUDIT_LOG_PATH = os.path.join(FEATURE_STORE_PATH, "_audit_log.json")
-
-
-def _load_audit_log() -> list:
-    if os.path.exists(AUDIT_LOG_PATH):
-        try:
-            with open(AUDIT_LOG_PATH) as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return []
-
-
-def _save_audit_log(log: list):
-    with open(AUDIT_LOG_PATH, "w") as f:
-        json.dump(log, f, indent=2, ensure_ascii=False)
-
-
-def compute_file_sha256(file_bytes: bytes) -> str:
-    return hashlib.sha256(file_bytes).hexdigest()
-
-
-def compute_sheet_sha256(data: list) -> str:
-    """Hash the extracted row data for a single sheet."""
-    payload = json.dumps(data, sort_keys=True, default=str)
-    return hashlib.sha256(payload.encode()).hexdigest()
-
-
-def check_file_duplicate(file_hash: str) -> dict | None:
-    """Return the existing audit entry if this file hash was seen before."""
-    for entry in _load_audit_log():
-        if entry.get("file_hash") == file_hash:
-            return entry
-    return None
-
-
-def record_audit_entry(filename: str, file_hash: str, sheet_hashes: dict,
-                        num_sheets: int) -> dict:
-    log  = _load_audit_log()
-    ts   = datetime.datetime.now().isoformat(timespec="seconds")
-    entry = {
-        "filename":     filename,
-        "file_hash":    file_hash,
-        "sheet_hashes": sheet_hashes,
-        "num_sheets":   num_sheets,
-        "uploaded_at":  ts,
-    }
-    log.append(entry)
-    _save_audit_log(log)
-    return entry
-
-
-def save_feature_store(sheet_name: str, data: dict,
-                       filename: str = "", file_hash: str = "") -> str:
+def save_feature_store(sheet_name: str, data: dict) -> str:
     ts   = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    safe = sheet_name.replace(" ", "_").replace("/", "-")
-    path = os.path.join(FEATURE_STORE_PATH, f"{safe}_{ts}.json")
+    path = os.path.join(FEATURE_STORE_PATH, f"{sheet_name}_{ts}.json")
 
     def _sanitize(obj):
         if isinstance(obj, dict): return {k: _sanitize(v) for k, v in obj.items()}
@@ -1804,44 +1764,9 @@ def save_feature_store(sheet_name: str, data: dict,
         if isinstance(obj, str):  return normalize_str(obj)
         return obj
 
-    envelope = {
-        "_meta": {
-            "filename":    filename,
-            "sheet_name":  sheet_name,
-            "file_hash":   file_hash,
-            "exported_at": datetime.datetime.now().isoformat(timespec="seconds"),
-        },
-        "data": _sanitize(data),
-    }
     with open(path, "w") as f:
-        json.dump(envelope, f, indent=2, ensure_ascii=False)
+        json.dump(_sanitize(data), f, indent=2, ensure_ascii=False)
     return path
-
-
-def list_feature_store_entries() -> list:
-    """Return all saved JSON entries sorted newest-first as list of dicts."""
-    entries = []
-    for fname in os.listdir(FEATURE_STORE_PATH):
-        if not fname.endswith(".json") or fname.startswith("_"):
-            continue
-        fpath = os.path.join(FEATURE_STORE_PATH, fname)
-        try:
-            with open(fpath) as f:
-                obj = json.load(f)
-            meta = obj.get("_meta", {})
-            entries.append({
-                "file":       fname,
-                "path":       fpath,
-                "filename":   meta.get("filename", "—"),
-                "sheet_name": meta.get("sheet_name", fname.rsplit("_", 2)[0]),
-                "file_hash":  meta.get("file_hash", "—"),
-                "exported_at":meta.get("exported_at", "—"),
-                "data":       obj.get("data", obj),
-            })
-        except Exception:
-            pass
-    entries.sort(key=lambda x: x["exported_at"], reverse=True)
-    return entries
 
 
 def extract_from_excel(file_path, sheet_name):
@@ -1992,7 +1917,7 @@ def parse_rows(sheet_type, rows):
 
 
 # ==============================
-# SESSION STATE DEFAULTS  ← FIX: all keys initialised before any widget reads them
+# SESSION STATE DEFAULTS
 # ==============================
 for _k, _v in [
     ("conf_threshold",      80),
@@ -2001,15 +1926,6 @@ for _k, _v in [
     ("schema_popup_target", None),
     ("schema_popup_tab",    "required"),
     ("settings_saved",      False),
-    # ── keys that were previously only set inside `if uploaded:` ──────────
-    ("sheet_cache",         {}),
-    ("sheet_names",         []),
-    ("selected_idx",        0),
-    ("sheet_hashes",        {}),
-    ("last_uploaded",       None),
-    ("is_duplicate",        False),
-    ("file_hash",           ""),
-    ("file_bytes",          0),
 ]:
     if _k not in st.session_state:
         st.session_state[_k] = _v
@@ -2031,11 +1947,11 @@ with col_title:
             f'</span>'
         )
 
-    logo_html = _logo_img_tag(height=38)
+    logo_html = _logo_img_tag(height=38)   # always embedded, no filesystem dependency
 
     st.markdown(
         f'<div class="main-title" style="display:flex;align-items:center;">'
-        f'{logo_html}📄 Loss Run Parser{badge_html}</div>',
+        f'{logo_html}🛡️ TPA Claims Review Portal{badge_html}</div>',
         unsafe_allow_html=True
     )
 
@@ -2063,74 +1979,16 @@ if uploaded:
     excel_path = os.path.join(st.session_state.tmpdir, f"input{file_ext}")
 
     if st.session_state.get("last_uploaded") != uploaded.name:
-        raw_bytes  = uploaded.read()
-        file_hash  = compute_file_sha256(raw_bytes)
         with open(excel_path, "wb") as f:
-            f.write(raw_bytes)
+            f.write(uploaded.read())
         st.session_state.last_uploaded = uploaded.name
-        st.session_state.file_hash     = file_hash
-        st.session_state.file_bytes    = len(raw_bytes)
         st.session_state.sheet_names   = get_sheet_names(excel_path)
         st.session_state.sheet_cache   = {}
         st.session_state.selected_idx  = 0
         st.session_state.focus_field   = None
-        st.session_state.sheet_hashes  = {}
         for key in list(st.session_state.keys()):
             if key.startswith("_rendered_"):
                 del st.session_state[key]
-        dup = check_file_duplicate(file_hash)
-        if dup:
-            st.warning(
-                f"⚠️ **Duplicate detected** — this file was previously uploaded on "
-                f"`{dup['uploaded_at']}` as `{dup['filename']}`. "
-                f"Processing will continue but no new audit entry will be created."
-            )
-            st.session_state.is_duplicate = True
-        else:
-            st.session_state.is_duplicate = False
-
-    # ── File-level high-level summary ─────────────────────────────────────
-    _file_hash    = st.session_state.get("file_hash", "")
-    _file_bytes   = st.session_state.get("file_bytes", 0)
-    _sheet_names  = st.session_state.get("sheet_names", [])
-    _is_dup       = st.session_state.get("is_duplicate", False)
-    _dup_badge    = ("<span style='background:#d29922;color:#0d1117;font-size:9px;"
-                     "border-radius:4px;padding:1px 6px;margin-left:8px;font-weight:bold;'>"
-                     "DUPLICATE</span>" if _is_dup else
-                     "<span style='background:#3fb950;color:#0d1117;font-size:9px;"
-                     "border-radius:4px;padding:1px 6px;margin-left:8px;font-weight:bold;'>"
-                     "UNIQUE</span>")
-    st.markdown(f"""
-    <div style="background:#161b22;border:1px solid #30363d;border-left:4px solid #58a6ff;
-                border-radius:6px;padding:12px 16px;margin-bottom:12px;">
-        <div style="font-family:'Segoe UI',Arial,sans-serif;font-size:10px;color:#8b949e;
-                    text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">
-            📁 File Summary
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;">
-            <div>
-                <span style="font-family:'Segoe UI',Arial,sans-serif;font-size:14px;
-                             font-weight:600;color:#e6edf3;">{uploaded.name}</span>
-                {_dup_badge}
-            </div>
-            <div style="font-size:12px;color:#8b949e;">
-                📄 <b style="color:#c9d1d9;">{len(_sheet_names)}</b> sheet(s)
-                &nbsp;|&nbsp;
-                💾 <b style="color:#c9d1d9;">{_file_bytes/1024:.1f} KB</b>
-                &nbsp;|&nbsp;
-                🔑 SHA-256: <code style="font-size:10px;color:#58a6ff;">
-                    {_file_hash[:16]}…{_file_hash[-8:]}</code>
-            </div>
-        </div>
-        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
-            {"".join(
-                f'<span style="background:#21262d;border:1px solid #30363d;border-radius:4px;'
-                f'padding:2px 8px;font-size:11px;color:#c9d1d9;">{s}</span>'
-                for s in _sheet_names
-            )}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
 
     with col_sheet_dropdown:
         st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
@@ -2146,6 +2004,9 @@ if uploaded:
             data, sheet_type = extract_from_excel(excel_path, selected_sheet)
             merged_meta      = extract_merged_cell_metadata(excel_path, selected_sheet)
             totals_data      = extract_totals_row(excel_path, selected_sheet)
+            st.info(f"Detected Sheet Type: **{sheet_type}** | "
+                    f"Merged Regions: **{len(merged_meta)}** | "
+                    f"Totals Found: **{'Yes' if totals_data else 'No'}**")
             if not data:
                 st.warning(f"No data found in sheet '{selected_sheet}'.")
                 st.stop()
@@ -2155,29 +2016,11 @@ if uploaded:
                         if key in inf and isinstance(inf[key], str):
                             inf[key] = normalize_str(inf[key])
             _title_flds = extract_title_fields(merged_meta)
-
-            _sheet_hash = compute_sheet_sha256(
-                [{k: v.get("value","") for k,v in r.items()} for r in data]
-            )
-            st.session_state.sheet_hashes = {
-                **st.session_state.get("sheet_hashes", {}),
-                selected_sheet: _sheet_hash,
-            }
-            if not st.session_state.get("is_duplicate", False):
-                record_audit_entry(
-                    filename     = uploaded.name,
-                    file_hash    = st.session_state.get("file_hash", ""),
-                    sheet_hashes = st.session_state.sheet_hashes,
-                    num_sheets   = len(st.session_state.sheet_names),
-                )
-
             st.session_state.sheet_cache[selected_sheet] = {
                 "data":         data,
                 "merged_meta":  merged_meta,
                 "totals":       totals_data,
                 "title_fields": _title_flds,
-                "sheet_type":   sheet_type,
-                "sheet_hash":   _sheet_hash,
             }
             st.session_state.selected_idx = 0
             st.session_state.focus_field  = None
@@ -2187,38 +2030,6 @@ if uploaded:
     merged_meta  = active.get("merged_meta", {})
     totals_data  = active.get("totals", {})
     title_fields = active.get("title_fields", {})
-    _s_type      = active.get("sheet_type", "UNKNOWN")
-    _s_hash      = active.get("sheet_hash", "")
-
-    # ── Sheet-level summary banner ─────────────────────────────────────────
-    _num_rows = len(data)
-    _num_cols = max((len(r) for r in data), default=0) if data else 0
-    _totals_flag = "Yes" if totals_data else "No"
-    _merged_count = len([v for v in merged_meta.values() if v.get("value")])
-    _lob_val  = title_fields.get("Line of Business", {}).get("value", "—")
-    _pol_val  = title_fields.get("Policy Number",    {}).get("value", "—")
-    st.markdown(f"""
-    <div style="background:#161b22;border:1px solid #30363d;border-left:4px solid #3fb950;
-                border-radius:6px;padding:10px 16px;margin-bottom:10px;">
-        <div style="font-family:'Segoe UI',Arial,sans-serif;font-size:10px;color:#8b949e;
-                    text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">
-            📊 Sheet Summary — <b style="color:#c9d1d9;">{selected_sheet}</b>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:18px;font-size:12px;color:#8b949e;">
-            <span>🗂 Type: <b style="color:#c9d1d9;">{_s_type}</b></span>
-            <span>📋 Rows: <b style="color:#c9d1d9;">{_num_rows}</b></span>
-            <span>📐 Columns: <b style="color:#c9d1d9;">{_num_cols}</b></span>
-            <span>∑ Totals row: <b style="color:#c9d1d9;">{_totals_flag}</b></span>
-            <span>🔗 Merged regions: <b style="color:#c9d1d9;">{_merged_count}</b></span>
-            <span>🏷 LOB: <b style="color:#c9d1d9;">{_lob_val}</b></span>
-            <span>📄 Policy: <b style="color:#c9d1d9;">{_pol_val}</b></span>
-        </div>
-        {"" if not _s_hash else
-         f'<div style="margin-top:6px;font-size:10px;color:#8b949e;">'
-         f'🔑 Sheet SHA-256: <code style="color:#58a6ff;">'
-         f'{_s_hash[:16]}…{_s_hash[-8:]}</code></div>'}
-    </div>
-    """, unsafe_allow_html=True)
 
     if st.session_state.selected_idx >= len(data):
         st.session_state.selected_idx = 0
@@ -2232,7 +2043,7 @@ if uploaded:
         with st.container(height=700, border=False):
             st.markdown(
                 "<p style='color:#8b949e;font-weight:bold;font-size:12px;"
-                "text-transform:uppercase;'>CLAIM RECORDS</p>",
+                "text-transform:uppercase;'>TPA Records</p>",
                 unsafe_allow_html=True
             )
             for i, row_data in enumerate(data):
@@ -2366,8 +2177,9 @@ if uploaded:
                     unsafe_allow_html=True
                 )
 
+            # Column headers
             if _show_conf:
-                hc = st.columns([1.8, 1.7, 1.8, 1.8, 0.55, 0.55, 0.45])
+                hc = st.columns([1.8, 1.5, 1.8, 1.8, 0.55, 0.55, 0.45])
                 for col_i, lbl in enumerate(["**SCHEMA FIELD**", "**CONFIDENCE**",
                                               "**EXTRACTED VALUE**", "**MODIFIED VALUE**"]):
                     with hc[col_i]: st.markdown(lbl)
@@ -2380,6 +2192,7 @@ if uploaded:
             for schema_field in _display_fields:
                 if schema_field not in _mapped:
                     is_req = schema_field in _schema_def["required_fields"]
+                    # Mandatory missing -> red alert; Optional missing -> quiet grey
                     if is_req:
                         _nf_bg, _nf_border, _nf_color = "#1a0e0e", "#f85149", "#f85149"
                         _nf_badge_bg, _nf_badge_color  = "#f85149", "white"
@@ -2441,6 +2254,7 @@ if uploaded:
                 _dot     = "<span style=\"color:#d29922;font-size:8px;\">●</span> " \
                            if _edited else ""
 
+                # ── Mandatory badge: plain * with no circle ──────────
                 if is_req:
                     _badge_html = (
                         "<span class='mandatory-asterisk' "
@@ -2842,505 +2656,3 @@ if uploaded:
                             {m['value'][:35]}
                         </div>
                     </div>""", unsafe_allow_html=True)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# LLM-ASSISTED INTERPRETATION  (OpenAI / ChatGPT)
-# Tasks covered:
-#   1. Identify unstructured fields like claim descriptions
-#   2. Design prompts for claim summarization
-#   3. Extract structured insights from text fields
-#   4. Integrate LLM processing with the pipeline
-#   5. Validate outputs before final publishing
-# ══════════════════════════════════════════════════════════════════════════════
-
-_UNSTRUCTURED_KEYWORDS = [
-    "description", "narrative", "notes", "comment", "remark",
-    "cause", "nature", "detail", "summary", "loss desc",
-    "injury", "accident", "incident", "report",
-]
-
-def identify_unstructured_fields(claim_row: dict) -> list:
-    """Task 1 — Find free-text / unstructured fields in a claim row."""
-    found = []
-    for field, info in claim_row.items():
-        fn  = field.lower().replace("_", " ").strip()
-        val = info.get("value", "") or ""
-        if any(kw in fn for kw in _UNSTRUCTURED_KEYWORDS) and len(val.strip()) > 3:
-            found.append((field, val.strip()))
-    return found
-
-
-def build_claim_summary_prompt(claim_row: dict, claim_id: str,
-                                unstructured: list) -> str:
-    """Task 2 — Build the insurance-domain prompt for ChatGPT."""
-    field_lines   = [f"  - {f}: {i.get('value','').strip()}"
-                     for f, i in claim_row.items() if i.get("value","").strip()]
-    unstruct_text = "\n".join(f"  [{fn}]: {fv}" for fn, fv in unstructured) \
-                    if unstructured else "  (none detected)"
-
-    return f"""You are an expert insurance claims analyst. Analyze the following loss run claim record and provide a structured response.
-
-CLAIM ID: {claim_id}
-
-CLAIM DATA:
-{chr(10).join(field_lines)}
-
-UNSTRUCTURED / FREE-TEXT FIELDS:
-{unstruct_text}
-
-Please provide:
-1. CLAIM SUMMARY: A concise 2-3 sentence plain-English summary of this claim.
-2. KEY INSIGHTS: Up to 5 bullet points of notable findings from the text fields.
-3. RISK FLAGS: Any red flags, anomalies, or items needing manual review.
-4. RECOMMENDED ACTION: One-line recommended next step for the claims reviewer.
-5. FIELD VALIDATION: For each unstructured field, confirm if the value is plausible or flag issues.
-
-Respond in this exact JSON format:
-{{
-  "claim_summary": "...",
-  "key_insights": ["...", "..."],
-  "risk_flags": ["...", "..."],
-  "recommended_action": "...",
-  "field_validation": {{
-    "<field_name>": {{"status": "ok" | "flag", "note": "..."}}
-  }}
-}}"""
-
-
-def call_openai_llm(prompt: str, api_key: str,
-                    model: str = "gpt-4o-mini") -> dict:
-    """Task 4 — Call OpenAI ChatCompletions and return parsed JSON result."""
-    import urllib.request
-    import urllib.error
-
-    payload = json.dumps({
-        "model": model,
-        "messages": [
-            {"role": "system",
-             "content": "You are an insurance claims analyst. Always respond with valid JSON only."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.2,
-        "max_tokens": 1000,
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        "https://api.openai.com/v1/chat/completions",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
-        method="POST"
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            raw = json.loads(resp.read().decode("utf-8"))
-        content = raw["choices"][0]["message"]["content"].strip()
-        if content.startswith("```"):
-            content = re.sub(r"^```(?:json)?\s*", "", content)
-            content = re.sub(r"\s*```$", "", content.strip())
-        return {"ok": True, "result": json.loads(content)}
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode("utf-8", errors="replace")
-        return {"ok": False, "error": f"HTTP {e.code}: {err_body[:300]}"}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
-
-def validate_llm_output(llm_result: dict) -> tuple:
-    """Task 5 — Validate LLM response before publishing. Returns (is_valid, issues)."""
-    required_keys = [
-        "claim_summary", "key_insights",
-        "risk_flags", "recommended_action", "field_validation"
-    ]
-    issues = []
-    if not isinstance(llm_result, dict):
-        return False, ["LLM response is not a JSON object."]
-    for k in required_keys:
-        if k not in llm_result:
-            issues.append(f"Missing key: '{k}'")
-    if "claim_summary" in llm_result and (
-            not isinstance(llm_result["claim_summary"], str)
-            or len(llm_result["claim_summary"].strip()) < 10):
-        issues.append("'claim_summary' is too short or not a string.")
-    if "key_insights" in llm_result:
-        if not isinstance(llm_result["key_insights"], list):
-            issues.append("'key_insights' must be a list.")
-        elif len(llm_result["key_insights"]) == 0:
-            issues.append("'key_insights' is empty.")
-    if "risk_flags" in llm_result and not isinstance(llm_result["risk_flags"], list):
-        issues.append("'risk_flags' must be a list.")
-    if "field_validation" in llm_result:
-        fv = llm_result["field_validation"]
-        if not isinstance(fv, dict):
-            issues.append("'field_validation' must be an object.")
-        else:
-            for fname, finfo in fv.items():
-                if not isinstance(finfo, dict):
-                    issues.append(f"field_validation['{fname}'] must be an object.")
-                elif finfo.get("status") not in ("ok", "flag"):
-                    issues.append(
-                        f"field_validation['{fname}'].status must be 'ok' or 'flag'.")
-    return len(issues) == 0, issues
-
-
-def render_llm_panel(claim_row: dict, claim_id: str, selected_sheet: str):
-    """Full Streamlit UI for LLM-Assisted Interpretation."""
-
-    st.markdown(
-        "<div style='font-family:\"Segoe UI\",Arial,sans-serif;font-size:18px;"
-        "font-weight:600;color:#e6edf3;margin-bottom:4px;'>"
-        "🤖 LLM-Assisted Interpretation</div>"
-        "<div style='font-size:12px;color:#8b949e;margin-bottom:10px;'>"
-        "Powered by OpenAI ChatGPT · Summarization, insight extraction "
-        "&amp; pre-publish validation.</div>",
-        unsafe_allow_html=True,
-    )
-
-    # API Key
-    llm_key_skey = "llm_openai_api_key"
-    if llm_key_skey not in st.session_state:
-        st.session_state[llm_key_skey] = ""
-
-    with st.expander("🔑 OpenAI API Key",
-                     expanded=st.session_state[llm_key_skey] == ""):
-        col_key, col_save = st.columns([5, 1])
-        with col_key:
-            entered_key = st.text_input(
-                "API key", value=st.session_state[llm_key_skey],
-                type="password", key="llm_key_input",
-                label_visibility="collapsed", placeholder="sk-…",
-            )
-        with col_save:
-            if st.button("Save", key="llm_key_save_btn", use_container_width=True):
-                st.session_state[llm_key_skey] = entered_key.strip()
-                st.success("Saved.")
-                st.rerun()
-        st.markdown(
-            "<div style='font-size:10px;color:#8b949e;margin-top:4px;'>"
-            "⚠ Key stored in session only — never written to disk.</div>",
-            unsafe_allow_html=True,
-        )
-
-    api_key = st.session_state.get(llm_key_skey, "").strip()
-    key_ok  = api_key.startswith("sk-") and len(api_key) > 20
-
-    # ── Task 1: Unstructured fields ──────────────────────────────────────
-    unstructured = identify_unstructured_fields(claim_row)
-    st.markdown(
-        "<div style='font-size:11px;font-weight:bold;color:#8b949e;"
-        "text-transform:uppercase;margin:10px 0 4px;'>"
-        "① Unstructured Fields Detected</div>",
-        unsafe_allow_html=True,
-    )
-    if unstructured:
-        for fname, fval in unstructured:
-            preview = fval[:120] + ("…" if len(fval) > 120 else "")
-            st.markdown(
-                f"<div style='background:#161b22;border:1px solid #30363d;"
-                f"border-left:3px solid #58a6ff;border-radius:4px;"
-                f"padding:6px 10px;margin-bottom:4px;font-size:12px;'>"
-                f"<span style='color:#58a6ff;font-weight:bold;'>{fname}</span>"
-                f"<span style='color:#8b949e;margin-left:8px;'>{preview}</span>"
-                f"</div>",
-                unsafe_allow_html=True,
-            )
-    else:
-        st.markdown(
-            "<div style='color:#8b949e;font-size:12px;padding:4px 0;'>"
-            "No unstructured text fields detected in this claim.</div>",
-            unsafe_allow_html=True,
-        )
-
-    # ── Task 2: Prompt preview ──────────────────────────────────────────
-    st.markdown(
-        "<div style='font-size:11px;font-weight:bold;color:#8b949e;"
-        "text-transform:uppercase;margin:10px 0 4px;'>"
-        "② Prompt (Claim Summarization)</div>",
-        unsafe_allow_html=True,
-    )
-    with st.expander("View prompt that will be sent to ChatGPT", expanded=False):
-        st.code(
-            build_claim_summary_prompt(claim_row, claim_id, unstructured),
-            language="text"
-        )
-
-    llm_model = st.selectbox(
-        "ChatGPT model",
-        options=["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
-        index=0,
-        key=f"llm_model_sel_{selected_sheet}_{claim_id}",
-        help="gpt-4o-mini is fast and cost-effective; gpt-4o is more thorough.",
-    )
-
-    # ── Task 3 + 4: Run LLM ─────────────────────────────────────────────
-    run_key = f"llm_result_{selected_sheet}_{claim_id}"
-    if st.button(
-        "🤖 Run LLM Analysis" if key_ok else "🔑 Add API Key above to Run",
-        key=f"llm_run_{selected_sheet}_{claim_id}",
-        use_container_width=True,
-        type="primary",
-        disabled=not key_ok,
-    ):
-        with st.spinner("Calling ChatGPT…"):
-            prompt   = build_claim_summary_prompt(claim_row, claim_id, unstructured)
-            response = call_openai_llm(prompt, api_key, model=llm_model)
-        if response["ok"]:
-            is_valid, val_issues = validate_llm_output(response["result"])
-            st.session_state[run_key] = {
-                "result":     response["result"],
-                "is_valid":   is_valid,
-                "val_issues": val_issues,
-                "model":      llm_model,
-                "ran_at":     datetime.datetime.now().strftime("%H:%M:%S"),
-            }
-            st.rerun()
-        else:
-            st.error(f"OpenAI API error: {response['error']}")
-
-    # ── Display cached results ───────────────────────────────────────────
-    cached = st.session_state.get(run_key)
-    if cached:
-        res        = cached["result"]
-        is_valid   = cached["is_valid"]
-        val_issues = cached["val_issues"]
-
-        # Task 5 — validation badge
-        if is_valid:
-            st.markdown(
-                f"<div style='background:#1c2d1c;border:1px solid #3fb950;"
-                f"border-radius:6px;padding:6px 12px;margin:8px 0;"
-                f"font-size:12px;color:#3fb950;'>"
-                f"✅ Validated — ready to publish &nbsp;"
-                f"<span style='color:#8b949e;font-size:10px;'>"
-                f"model: {cached['model']} · {cached['ran_at']}</span></div>",
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                "<div style='background:#2d1a08;border:1px solid #f0883e;"
-                "border-radius:6px;padding:6px 12px;margin:8px 0;"
-                "font-size:12px;color:#f0883e;'>"
-                "⚠ Validation issues — review before publishing:<br>"
-                + "".join(f"&nbsp;• {i}<br>" for i in val_issues) + "</div>",
-                unsafe_allow_html=True,
-            )
-
-        # Summary
-        st.markdown(
-            "<div style='font-size:11px;font-weight:bold;color:#8b949e;"
-            "text-transform:uppercase;margin:12px 0 4px;'>③ Claim Summary</div>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"<div style='background:#161b22;border:1px solid #30363d;"
-            f"border-left:4px solid #58a6ff;border-radius:6px;"
-            f"padding:10px 14px;font-size:13px;color:#e6edf3;line-height:1.6;'>"
-            f"{res.get('claim_summary', '—')}</div>",
-            unsafe_allow_html=True,
-        )
-
-        # Key insights (Task 3 — structured extraction)
-        insights = res.get("key_insights", [])
-        if insights:
-            st.markdown(
-                "<div style='font-size:11px;font-weight:bold;color:#8b949e;"
-                "text-transform:uppercase;margin:12px 0 4px;'>"
-                "③ Key Insights</div>",
-                unsafe_allow_html=True,
-            )
-            for ins in insights:
-                st.markdown(
-                    f"<div style='background:#161b22;border:1px solid #30363d;"
-                    f"border-radius:4px;padding:5px 10px;margin-bottom:3px;"
-                    f"font-size:12px;color:#c9d1d9;'>💡 {ins}</div>",
-                    unsafe_allow_html=True,
-                )
-
-        # Risk flags
-        flags = res.get("risk_flags", [])
-        if flags:
-            st.markdown(
-                "<div style='font-size:11px;font-weight:bold;color:#8b949e;"
-                "text-transform:uppercase;margin:12px 0 4px;'>⚠ Risk Flags</div>",
-                unsafe_allow_html=True,
-            )
-            for flag in flags:
-                st.markdown(
-                    f"<div style='background:#1f0d0d;border:1px solid #f85149;"
-                    f"border-radius:4px;padding:5px 10px;margin-bottom:3px;"
-                    f"font-size:12px;color:#f85149;'>🚩 {flag}</div>",
-                    unsafe_allow_html=True,
-                )
-
-        # Recommended action
-        rec = res.get("recommended_action", "")
-        if rec:
-            st.markdown(
-                "<div style='font-size:11px;font-weight:bold;color:#8b949e;"
-                "text-transform:uppercase;margin:12px 0 4px;'>"
-                "✅ Recommended Action</div>",
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                f"<div style='background:#1c2d1c;border:1px solid #3fb950;"
-                f"border-radius:4px;padding:8px 12px;"
-                f"font-size:13px;color:#3fb950;font-weight:600;'>"
-                f"→ {rec}</div>",
-                unsafe_allow_html=True,
-            )
-
-        # Field validation (Task 5 detail)
-        fv = res.get("field_validation", {})
-        if fv:
-            st.markdown(
-                "<div style='font-size:11px;font-weight:bold;color:#8b949e;"
-                "text-transform:uppercase;margin:12px 0 4px;'>⑤ Field Validation</div>",
-                unsafe_allow_html=True,
-            )
-            for fname, finfo in fv.items():
-                status = finfo.get("status", "ok")
-                note   = finfo.get("note", "")
-                bg     = "#1c2d1c" if status == "ok" else "#1f0d0d"
-                border = "#3fb950" if status == "ok" else "#f85149"
-                icon   = "✅" if status == "ok" else "🚩"
-                color  = "#3fb950" if status == "ok" else "#f85149"
-                st.markdown(
-                    f"<div style='background:{bg};border:1px solid {border};"
-                    f"border-radius:4px;padding:5px 10px;margin-bottom:3px;"
-                    f"font-size:11px;'>"
-                    f"<span style='color:{color};font-weight:bold;'>{icon} {fname}</span>"
-                    f"<span style='color:#c9d1d9;margin-left:8px;'>{note}</span>"
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
-
-        # Download
-        st.download_button(
-            "⬇ Download LLM Analysis (JSON)",
-            data=json.dumps(
-                {"claim_id": claim_id, "model": cached["model"],
-                 "ran_at": cached["ran_at"], **res},
-                indent=2, ensure_ascii=False,
-            ),
-            file_name=f"llm_{claim_id}_{selected_sheet}.json",
-            mime="application/json",
-            key=f"dl_llm_{selected_sheet}_{claim_id}",
-            use_container_width=True,
-        )
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# LLM PANEL  — rendered below the three-column portal for the active claim
-# ══════════════════════════════════════════════════════════════════════════════
-if uploaded and "selected_sheet" in dir() and "curr_claim" in dir():
-    st.markdown("<hr style='border-color:#30363d;margin:20px 0 10px;'>",
-                unsafe_allow_html=True)
-    render_llm_panel(curr_claim, curr_claim_id, selected_sheet)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# JSON STORE VIEWER
-# ══════════════════════════════════════════════════════════════════════════════
-st.markdown("<hr style='border-color:#30363d;margin:30px 0 16px;'>",
-            unsafe_allow_html=True)
-
-st.markdown(
-    "<div style='font-family:\"Segoe UI\",Arial,sans-serif;font-size:18px;"
-    "font-weight:600;color:#e6edf3;margin-bottom:4px;'>🗄 JSON Store Viewer</div>"
-    "<div style='font-size:12px;color:#8b949e;margin-bottom:14px;'>"
-    "All exported JSON records saved to the feature store, grouped by file → sheet.</div>",
-    unsafe_allow_html=True,
-)
-
-_store_entries = list_feature_store_entries()
-
-if not _store_entries:
-    st.info("No JSON records in the feature store yet. Export a sheet to populate it.")
-else:
-    from collections import defaultdict
-    _by_file = defaultdict(lambda: defaultdict(list))
-    for e in _store_entries:
-        _by_file[e["filename"] or "—"][e["sheet_name"]].append(e)
-
-    st.button("🔄 Refresh Store", key="store_refresh_btn")
-
-    for _fname, _sheets in _by_file.items():
-        with st.expander(f"📁 {_fname}  ({len(_sheets)} sheet(s))", expanded=False):
-            for _sname, _entries in _sheets.items():
-                st.markdown(
-                    f"<div style='font-family:\"Segoe UI\",Arial,sans-serif;"
-                    f"font-size:13px;font-weight:600;color:#58a6ff;margin:10px 0 4px;'>"
-                    f"📋 {_sname}</div>",
-                    unsafe_allow_html=True,
-                )
-                for _ent in _entries:
-                    st.markdown(
-                        f"<span style='font-size:10px;color:#8b949e;'>"
-                        f"Exported: {_ent['exported_at']} &nbsp;|&nbsp; "
-                        f"File: <code style='font-size:9px;color:#58a6ff;'>"
-                        f"{_ent['file_hash'][:12] if _ent['file_hash'] != '—' else '—'}…"
-                        f"</code></span>",
-                        unsafe_allow_html=True,
-                    )
-                    _jdata = _ent["data"]
-                    if isinstance(_jdata, dict):
-                        _rows_for_table = []
-                        for _claim_id_j, _fields in _jdata.items():
-                            if isinstance(_fields, dict):
-                                _flat = {"Claim ID": _claim_id_j}
-                                for _f, _fv in _fields.items():
-                                    if isinstance(_fv, dict):
-                                        _flat[_f] = _fv.get("value", str(_fv))
-                                    else:
-                                        _flat[_f] = str(_fv)
-                                _rows_for_table.append(_flat)
-                        if _rows_for_table:
-                            import pandas as pd
-                            st.dataframe(
-                                pd.DataFrame(_rows_for_table),
-                                use_container_width=True,
-                                height=min(200 + len(_rows_for_table) * 35, 500),
-                            )
-                        else:
-                            st.json(_jdata, expanded=False)
-                    else:
-                        st.json(_jdata, expanded=False)
-
-                    st.download_button(
-                        "⬇ Download this export",
-                        data=json.dumps(_ent["data"], indent=2, ensure_ascii=False),
-                        file_name=_ent["file"],
-                        mime="application/json",
-                        key=f"dl_store_{_ent['file']}_{_sname}",
-                        use_container_width=False,
-                    )
-                    st.markdown("<hr style='border-color:#21262d;margin:6px 0;'>",
-                                unsafe_allow_html=True)
-
-# ── Audit Log ─────────────────────────────────────────────────────────────────
-st.markdown("<br>", unsafe_allow_html=True)
-with st.expander("🔍 Upload Audit Log", expanded=False):
-    _audit = _load_audit_log()
-    if not _audit:
-        st.info("No uploads recorded yet.")
-    else:
-        import pandas as pd
-        _audit_rows = []
-        for _a in reversed(_audit):
-            _audit_rows.append({
-                "Uploaded At":  _a.get("uploaded_at", "—"),
-                "Filename":     _a.get("filename", "—"),
-                "Sheets":       _a.get("num_sheets", "—"),
-                "File SHA-256": _a.get("file_hash", "—")[:24] + "…",
-                "Status":       "Duplicate" if _a.get("is_duplicate") else "Unique",
-            })
-        st.dataframe(pd.DataFrame(_audit_rows), use_container_width=True)
-        st.download_button(
-            "⬇ Download Full Audit Log (JSON)",
-            data=json.dumps(_audit, indent=2, ensure_ascii=False),
-            file_name="_audit_log.json",
-            mime="application/json",
-            key="dl_audit_log",
-        )
