@@ -2043,7 +2043,7 @@ if uploaded:
         with st.container(height=700, border=False):
             st.markdown(
                 "<p style='color:#8b949e;font-weight:bold;font-size:12px;"
-                "text-transform:uppercase;'>TPA Records</p>",
+                "text-transform:uppercase;'>CLAIM RECORDS</p>",
                 unsafe_allow_html=True
             )
             for i, row_data in enumerate(data):
