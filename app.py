@@ -1037,25 +1037,16 @@ footer { display: none !important; }
     max-width: 100% !important;
 }
 
-/* Full-width sticky navbar */
-.navbar {
-    position: sticky;
-    top: 0;
-    z-index: 999;
-    background: linear-gradient(180deg, #16162a 0%, #12121e 100%);
-    border-bottom: 1px solid var(--b0);
-    box-shadow: 0 2px 20px rgba(0,0,0,0.5), 0 0 1px rgba(79,156,249,0.12);
+/* Top bar title row */
+.topbar-title-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 28px;
-    height: 60px;
-    margin: -1.5rem -1.5rem 24px -1.5rem;
+    padding: 10px 0 6px 0;
 }
-.navbar-left {
-    display: flex;
-    align-items: center;
-    gap: 14px;
+.topbar-divider {
+    border: none;
+    border-top: 1px solid var(--b0);
+    margin: 4px 0 20px 0;
 }
 .navbar-title-wrap {
     display: flex;
@@ -1308,21 +1299,28 @@ div[data-testid="stButton"] button[kind="primary"]:hover {
 }
 div[data-testid="stButton"] button:disabled { opacity: 0.3 !important; }
 
-.settings-btn div[data-testid="stButton"] button {
-    background: transparent !important;
-    border: 1px solid var(--b1) !important;
-    border-radius: var(--radius) !important;
-    color: var(--t2) !important;
-    font-size: 16px !important;
-    padding: 6px 10px !important;
-    height: 36px !important;
-    line-height: 1 !important;
+.navbar-gear-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 6px;
+    color: rgba(255,255,255,0.65);
+    font-size: 18px;
+    height: 34px;
+    width: 34px;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
 }
-.settings-btn div[data-testid="stButton"] button:hover {
-    background: var(--blue-g) !important;
-    border-color: var(--blue) !important;
-    color: var(--blue) !important;
+.navbar-gear-btn:hover {
+    background: rgba(79,156,249,0.12);
+    border-color: #4f9cf9;
+    color: #4f9cf9;
 }
+
 
 div[role="dialog"] {
     background-color: var(--surface) !important;
@@ -2048,9 +2046,7 @@ for _k,_v in [
     if _k not in st.session_state: st.session_state[_k] = _v
 
 # ==============================
-# ==============================
-# ==============================
-# TOP BAR — sticky navbar + gear button in same visual row
+# TOP BAR — title row with working settings button
 # ==============================
 active_schema = st.session_state.get("active_schema", None)
 
@@ -2058,42 +2054,40 @@ def _navbar_badge_html():
     if not active_schema or active_schema not in SCHEMAS: return ""
     sc = SCHEMAS[active_schema]
     return (
-        f'<div class="navbar-divider"></div>'
         f'<span class="navbar-schema-badge" '
-        f'style="border-color:{sc["color"]}44;color:{sc["color"]};background:{sc["color"]}11;">'
+        f'style="border-color:{sc["color"]}44;color:{sc["color"]};background:{sc["color"]}11;'
+        f'display:inline-flex;align-items:center;gap:6px;border-radius:6px;padding:4px 12px;'
+        f'font-size:12px;font-weight:700;font-family:monospace;border:1px solid;white-space:nowrap;">'
         f'{sc["icon"]} {active_schema} &nbsp;&middot;&nbsp; {sc["version"]}</span>'
     )
 
 _logo_nav  = _logo_img_tag(height=34)
 _nav_badge = _navbar_badge_html()
 
-# Render navbar HTML (left side: logo + title + schema badge)
-st.markdown(
-    f'''<div class="navbar">
-  <div class="navbar-left">
-    {_logo_nav}
-    <div class="navbar-divider"></div>
-    <div class="navbar-title-wrap">
-      <span class="navbar-title">&#128737; TPA Loss Run Parser</span>
-      <span class="navbar-subtitle">Insurance Loss Run Parsing &amp; Schema Export Platform</span>
-    </div>
-    {_nav_badge}
-  </div>
-</div>''',
-    unsafe_allow_html=True
-)
+# Title row: logo + title on left, gear button on far right — all native Streamlit columns
+_col_title, _col_gear = st.columns([11, 1])
 
-# Gear button + sheet dropdown — rendered in a row immediately after navbar
-# The gear button is visually overlaid on the navbar via CSS negative margin
-_nb_left, _nb_gear, _nb_sheet = st.columns([5.5, 0.22, 1.2])
-with _nb_gear:
-    st.markdown("<div class='settings-btn' style='margin-top:-52px;'>", unsafe_allow_html=True)
-    if st.button("\u2699", key="open_settings", help="Settings", use_container_width=True):
+with _col_title:
+    st.markdown(
+        '<div class="topbar-title-row">'
+        + _logo_nav
+        + '<div style="display:inline-flex;flex-direction:column;vertical-align:middle;margin-left:14px;">'
+        '<span class="navbar-title">&#128737; TPA Loss Run Parser</span>'
+        '<span class="navbar-subtitle">Insurance Loss Run Parsing &amp; Schema Export Platform</span>'
+        '</div>'
+        + ('&nbsp;&nbsp;' + _nav_badge if _nav_badge else '')
+        + '</div>',
+        unsafe_allow_html=True
+    )
+
+with _col_gear:
+    if st.button("⚙", key="open_settings", help="Settings", use_container_width=True):
         show_settings_dialog()
-    st.markdown("</div>", unsafe_allow_html=True)
 
-# col_sheet_dropdown alias so the rest of the code still works
-col_sheet_dropdown = _nb_sheet
+st.markdown('<hr class="topbar-divider">', unsafe_allow_html=True)
+
+# Sheet dropdown column
+_, col_sheet_dropdown = st.columns([6.8, 1.2])
 
 if st.session_state.get("schema_popup_target"):
     _target = st.session_state["schema_popup_target"]; st.session_state["schema_popup_target"] = None
